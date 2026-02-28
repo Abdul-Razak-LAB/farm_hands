@@ -1,0 +1,632 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- CORE IDENTITY ---
+
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  name          String?
+  hashedPassword String
+  memberships   FarmMembership[]
+  invitesSent   Invitation[]     @relation("InvitationInviter")
+  sessions      Session[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Farm {
+  id          String           @id @default(cuid())
+  name        String
+  memberships FarmMembership[]
+  invitations Invitation[]
+  events      Event[]
+  tasks       Task[]
+  budgets     Budget[]
+  inventory   InventoryItem[]
+  vendors     Vendor[]
+  sensors     SensorDevice[]
+  alerts      Alert[]
+  syncCursors SyncCursor[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+enum FarmRole {
+  OWNER
+  MANAGER
+  WORKER
+}
+
+model FarmMembership {
+  id      String   @id @default(cuid())
+  farmId  String
+  userId  String
+  role    FarmRole @default(WORKER)
+  farm    Farm     @relation(fields: [farmId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@unique([farmId, userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Invitation {
+  id              String    @id @default(cuid())
+  farmId          String
+  email           String
+  role            FarmRole
+  token           String    @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  invitedByUserId String?
+  farm            Farm      @relation(fields: [farmId], references: [id])
+  invitedBy       User?     @relation("InvitationInviter", fields: [invitedByUserId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([farmId, email])
+  @@index([farmId, acceptedAt, expiresAt])
+}
+
+// --- EVENT DRIVEN CORE ---
+
+model Event {
+  id             String   @id @default(cuid())
+  farmId         String
+  type           String   // e.g., "TASK_COMPLETED"
+  payload        Json
+  metadata       Json?    // IP, Device, AppVersion
+  idempotencyKey String?
+  userId         String?
+  createdAt      DateTime @default(now())
+  
+  // Optional: Tamper-evident chain
+  prevHash       String?
+  hash           String?
+
+  farm           Farm     @relation(fields: [farmId], references: [id])
+
+  @@unique([farmId, idempotencyKey])
+  @@index([farmId, createdAt])
+}
+
+model SyncCursor {
+  id        String   @id @default(cuid())
+  farmId    String
+  deviceId  String
+  lastSync  DateTime @default(now())
+  farm      Farm     @relation(fields: [farmId], references: [id])
+
+  @@unique([farmId, deviceId])
+}
+
+// --- WORK ORCHESTRATION ---
+
+model Task {
+  id            String             @id @default(cuid())
+  farmId        String
+  title         String
+  description   String?
+  status        TaskStatus         @default(PENDING)
+  priority      Int                @default(1)
+  dueDate       DateTime?
+  assignedTo    String?
+  checklist     TaskChecklistItem[]
+  attachments   Attachment[]
+  farm          Farm               @relation(fields: [farmId], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([farmId, status])
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  VERIFIED
+  CANCELLED
+}
+
+model TaskChecklistItem {
+  id        String   @id @default(cuid())
+  taskId    String
+  label     String
+  isDone    Boolean  @default(false)
+  task      Task     @relation(fields: [taskId], references: [id])
+}
+
+// --- FINANCE & PROCUREMENT ---
+
+model Budget {
+  id        String       @id @default(cuid())
+  farmId    String
+  name      String
+  total     Decimal      @db.Decimal(12, 2)
+  startDate DateTime
+  endDate   DateTime
+  lines     BudgetLine[]
+  farm      Farm         @relation(fields: [farmId], references: [id])
+}
+
+model BudgetLine {
+  id        String  @id @default(cuid())
+  budgetId  String
+  category  String
+  allocated Decimal @db.Decimal(12, 2)
+  spent     Decimal @db.Decimal(12, 2) @default(0)
+  budget    Budget  @relation(fields: [budgetId], references: [id])
+}
+
+model SpendRequest {
+  id          String         @id @default(cuid())
+  farmId      String
+  amount      Decimal        @db.Decimal(12, 2)
+  category    String
+  description String
+  status      ApprovalStatus @default(PENDING)
+  attachments Attachment[]
+  approvals   Approval[]
+  createdAt   DateTime       @default(now())
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Approval {
+  id             String       @id @default(cuid())
+  spendRequestId String
+  userId         String
+  status         ApprovalStatus
+  comment        String?
+  spendRequest   SpendRequest @relation(fields: [spendRequestId], references: [id])
+}
+
+model Vendor {
+  id              String           @id @default(cuid())
+  farmId          String
+  name            String
+  contactInfo     Json?
+  performanceScore Int             @default(100)
+  purchaseOrders  PurchaseOrder[]
+  farm            Farm             @relation(fields: [farmId], references: [id])
+}
+
+model PurchaseOrder {
+  id          String         @id @default(cuid())
+  farmId      String
+  vendorId    String
+  status      POStatus       @default(DRAFT)
+  items       POItem[]
+  reconciliation POReconciliation?
+  vendor      Vendor         @relation(fields: [vendorId], references: [id])
+  createdAt   DateTime       @default(now())
+}
+
+enum POStatus {
+  DRAFT
+  ISSUED
+  DELIVERED
+  RECONCILED
+  CANCELLED
+}
+
+model POItem {
+  id          String   @id @default(cuid())
+  poId        String
+  description String
+  qty         Decimal
+  unitPrice   Decimal
+  po          PurchaseOrder @relation(fields: [poId], references: [id])
+}
+
+model POReconciliation {
+  id      String        @id @default(cuid())
+  poId    String        @unique
+  diffs   Json?
+  status  String        // MATCHED, DISCREPANCY
+  po      PurchaseOrder @relation(fields: [poId], references: [id])
+}
+
+// --- INVENTORY ---
+
+model InventoryItem {
+  id        String              @id @default(cuid())
+  farmId    String
+  name      String
+  unit      String
+  balance   Decimal             @default(0)
+  movements InventoryMovement[]
+  farm      Farm                @relation(fields: [farmId], references: [id])
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model InventoryMovement {
+  id        String   @id @default(cuid())
+  itemId    String
+  qty       Decimal  // Positive for in, negative for out
+  type      String   // PURCHASE, USAGE, ADJUSTMENT
+  eventId   String?  // Reference to Event that triggered it
+  item      InventoryItem @relation(fields: [itemId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// --- PAYROLL ---
+
+model PayrollRun {
+  id          String         @id @default(cuid())
+  farmId      String
+  startDate   DateTime
+  endDate     DateTime
+  entries     PayrollEntry[]
+  status      String         // DRAFT, PROCESSING, PAID
+}
+
+model PayrollEntry {
+  id           String     @id @default(cuid())
+  payrollRunId String
+  userId       String
+  grossAmount  Decimal
+  netAmount    Decimal
+  status       String
+  payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id])
+}
+
+// --- VERIFICATION & MONITORING ---
+
+model Audit {
+  id          String        @id @default(cuid())
+  farmId      String
+  templateId  String
+  results     Json
+  score       Int?
+  attachments Attachment[]
+  createdAt   DateTime      @default(now())
+}
+
+model SensorDevice {
+  id        String          @id @default(cuid())
+  farmId    String
+  name      String
+  type      String          // TEMP, HUMIDITY, GPS
+  readings  SensorReading[]
+  farm      Farm            @relation(fields: [farmId], references: [id])
+}
+
+model SensorReading {
+  id        String       @id @default(cuid())
+  deviceId  String
+  data      Json
+  createdAt DateTime     @default(now())
+  device    SensorDevice @relation(fields: [deviceId], references: [id])
+}
+
+model Alert {
+  id        String   @id @default(cuid())
+  farmId    String
+  level     String   // INFO, WARNING, CRITICAL
+  message   String
+  resolved  Boolean  @default(false)
+  farm      Farm     @relation(fields: [farmId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// --- GENERAL ---
+
+model Attachment {
+  id             String   @id @default(cuid())
+  farmId         String
+  fileName       String
+  fileUrl        String
+  contentType    String
+  size           Int
+  hash           String   // Content hash for dedupe
+  metadata       Json?    // GPS, Device
+  taskId         String?
+  spendRequestId String?
+  auditId        String?
+  issueId        String?
+  task           Task?          @relation(fields: [taskId], references: [id])
+  spendRequest   SpendRequest? @relation(fields: [spendRequestId], references: [id])
+  audit          Audit?         @relation(fields: [auditId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model TaskTemplate {
+  id          String   @id @default(cuid())
+  farmId      String
+  name        String
+  description String?
+  checklist   Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([farmId, isActive])
+}
+
+model DailyUpdate {
+  id             String   @id @default(cuid())
+  farmId         String
+  userId         String
+  summary        String
+  blockers       String?
+  inputMode      String
+  idempotencyKey String?
+  createdAt      DateTime @default(now())
+
+  @@index([farmId, createdAt])
+  @@unique([farmId, idempotencyKey])
+}
+
+model WeeklyDigestSnapshot {
+  id        String   @id @default(cuid())
+  farmId    String
+  weekStart DateTime
+  weekEnd   DateTime
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([farmId, weekStart])
+}
+
+model Device {
+  id         String   @id @default(cuid())
+  farmId     String
+  userId     String?
+  deviceName String
+  platform   String
+  appVersion String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([farmId, userId])
+}
+
+model OutboxReceipt {
+  id             String   @id @default(cuid())
+  farmId         String
+  deviceId       String
+  idempotencyKey String
+  eventType      String
+  status         String
+  errorCode      String?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  @@unique([farmId, idempotencyKey])
+  @@index([farmId, deviceId, createdAt])
+}
+
+model PurchaseRequest {
+  id             String   @id @default(cuid())
+  farmId         String
+  userId         String
+  reason         String
+  amount         Decimal  @db.Decimal(12, 2)
+  vendorId       String?
+  status         String   @default("PENDING")
+  idempotencyKey String?
+  createdAt      DateTime @default(now())
+
+  @@index([farmId, createdAt])
+  @@unique([farmId, idempotencyKey])
+}
+
+model DeliveryReceipt {
+  id              String   @id @default(cuid())
+  farmId          String
+  purchaseOrderId String
+  payload         Json
+  discrepancy     String?
+  idempotencyKey  String?
+  createdAt       DateTime @default(now())
+
+  @@index([farmId, createdAt])
+  @@unique([farmId, idempotencyKey])
+}
+
+model Reconciliation {
+  id              String   @id @default(cuid())
+  farmId          String
+  purchaseOrderId String
+  status          String
+  notes           String?
+  payload         Json?
+  createdAt       DateTime @default(now())
+
+  @@index([farmId, createdAt])
+}
+
+model VendorPrice {
+  id          String   @id @default(cuid())
+  farmId      String
+  vendorId    String
+  itemName    String
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  currency    String   @default("USD")
+  effectiveAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([farmId, vendorId, itemName])
+}
+
+model VendorPerformanceMetric {
+  id         String   @id @default(cuid())
+  farmId     String
+  vendorId   String
+  metric     String
+  value      Decimal  @db.Decimal(12, 4)
+  recordedAt DateTime @default(now())
+  metadata   Json?
+
+  @@index([farmId, vendorId, metric])
+}
+
+model PayrollApproval {
+  id             String   @id @default(cuid())
+  farmId         String
+  payrollRunId   String
+  approverUserId String
+  status         String
+  comment        String?
+  idempotencyKey String?
+  createdAt      DateTime @default(now())
+
+  @@index([farmId, payrollRunId, createdAt])
+  @@unique([farmId, idempotencyKey])
+}
+
+model PayrollPayment {
+  id             String   @id @default(cuid())
+  farmId         String
+  payrollRunId   String
+  reference      String
+  provider       String
+  status         String
+  amount         Decimal  @db.Decimal(12, 2)
+  idempotencyKey String?
+  createdAt      DateTime @default(now())
+
+  @@index([farmId, payrollRunId, createdAt])
+  @@unique([farmId, idempotencyKey])
+}
+
+model AuditTemplate {
+  id        String   @id @default(cuid())
+  farmId    String
+  name      String
+  checklist Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([farmId, isActive])
+}
+
+model AuditResult {
+  id             String   @id @default(cuid())
+  farmId         String
+  auditId        String
+  payload        Json
+  score          Int?
+  idempotencyKey String?
+  createdAt      DateTime @default(now())
+
+  @@index([farmId, auditId, createdAt])
+  @@unique([farmId, idempotencyKey])
+}
+
+model AuditMedia {
+  id        String   @id @default(cuid())
+  farmId    String
+  auditId   String
+  fileUrl   String
+  hash      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([farmId, auditId])
+}
+
+model AlertRule {
+  id        String   @id @default(cuid())
+  farmId    String
+  name      String
+  metric    String
+  threshold Decimal  @db.Decimal(12, 4)
+  operator  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([farmId, isActive])
+}
+
+model AlertAction {
+  id        String   @id @default(cuid())
+  farmId    String
+  alertId   String
+  action    String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([farmId, alertId, createdAt])
+}
+
+model Issue {
+  id        String   @id @default(cuid())
+  farmId    String
+  title     String
+  severity  String
+  status    String   @default("OPEN")
+  details   String?
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([farmId, status, createdAt])
+}
+
+model IssueComment {
+  id        String   @id @default(cuid())
+  farmId    String
+  issueId   String
+  userId    String
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@index([farmId, issueId, createdAt])
+}
+
+model ExpertRequest {
+  id          String   @id @default(cuid())
+  farmId      String
+  issueId     String
+  requesterId String
+  note        String?
+  status      String   @default("REQUESTED")
+  createdAt   DateTime @default(now())
+
+  @@index([farmId, issueId, createdAt])
+}
+
+model ExpertReport {
+  id              String   @id @default(cuid())
+  farmId          String
+  issueId         String
+  expertRequestId String?
+  summary         String
+  recommendations Json?
+  createdAt       DateTime @default(now())
+
+  @@index([farmId, issueId, createdAt])
+}
+
+model Tombstone {
+  id         String   @id @default(cuid())
+  farmId     String
+  entityType String
+  entityId   String
+  deletedAt  DateTime @default(now())
+
+  @@index([farmId, deletedAt])
+}

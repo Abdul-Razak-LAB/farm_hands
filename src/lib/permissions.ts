@@ -4,6 +4,8 @@ import { AppError } from './errors';
 export type FarmPermission =
   | 'setup:read'
   | 'setup:write'
+  | 'marketplace:read'
+  | 'marketplace:write'
   | 'finance:read'
   | 'finance:write'
   | 'finance:approve'
@@ -33,6 +35,8 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
   OWNER: [
     'setup:read',
     'setup:write',
+    'marketplace:read',
+    'marketplace:write',
     'finance:read',
     'finance:write',
     'finance:approve',
@@ -59,6 +63,8 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
   MANAGER: [
     'setup:read',
     'setup:write',
+    'marketplace:read',
+    'marketplace:write',
     'finance:read',
     'finance:write',
     'report:read',
@@ -81,6 +87,8 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
   ],
   WORKER: [
     'setup:read',
+    'marketplace:read',
+    'marketplace:write',
     'updates:read',
     'updates:write',
     'message:read',

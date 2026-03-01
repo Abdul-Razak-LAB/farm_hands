@@ -2,6 +2,7 @@ export type RouteRule = { prefix: string; roles: string[] };
 
 export const ROUTE_RULES: RouteRule[] = [
   { prefix: '/setup', roles: ['OWNER', 'MANAGER', 'WORKER'] },
+  { prefix: '/marketplace', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/tasks', roles: ['MANAGER', 'WORKER'] },
   { prefix: '/finance', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/reports', roles: ['OWNER', 'MANAGER'] },

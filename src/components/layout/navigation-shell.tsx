@@ -12,6 +12,7 @@ import {
   HomeIcon, 
   CheckCircleIcon, 
   ChatBubbleLeftRightIcon,
+  Squares2X2Icon,
   BanknotesIcon, 
   ClipboardDocumentCheckIcon,
   SignalIcon,
@@ -148,6 +149,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   const navItems = [
     { name: 'Home', href: '/', icon: HomeIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Setup', href: '/setup', icon: Cog6ToothIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
+    { name: 'Market', href: '/marketplace', icon: Squares2X2Icon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Tasks', href: '/tasks', icon: CheckCircleIcon, roles: ['MANAGER', 'WORKER'] },
     { name: 'Finance', href: '/finance', icon: BanknotesIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['OWNER', 'MANAGER'] },

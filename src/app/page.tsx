@@ -26,6 +26,7 @@ export default function HomePage() {
 
   const modules: Array<{ name: string; href: string; roles: Role[]; description: string }> = [
     { name: 'Setup', href: '/setup', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Farm profile, sensors, and team role configuration.' },
+    { name: 'Marketplace', href: '/marketplace', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Buy and sell produce, equipment, and services.' },
     { name: 'Tasks', href: '/tasks', roles: ['MANAGER', 'WORKER'], description: 'Today, overdue, completed, and proof capture.' },
     { name: 'Finance', href: '/finance', roles: ['OWNER', 'MANAGER'], description: 'Spend requests, approvals, and budget visibility.' },
     { name: 'Reports', href: '/reports', roles: ['OWNER', 'MANAGER'], description: 'Performance analytics and CSV/PDF/Excel exports.' },

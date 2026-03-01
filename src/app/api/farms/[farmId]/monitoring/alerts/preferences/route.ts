@@ -2,23 +2,25 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/errors';
 import { getRequestUserId, requirePermission } from '@/lib/permissions';
-import { monitoringService } from '@/services/monitoring/monitoring-service';
 import { alertPreferencesService } from '@/services/monitoring/alert-preferences-service';
 
-const triggerSchema = z.object({
-  level: z.enum(['INFO', 'WARNING', 'CRITICAL']),
-  message: z.string().min(3),
+const preferencesSchema = z.object({
+  inApp: z.boolean(),
+  sms: z.boolean(),
+  email: z.boolean(),
+  smsRecipients: z.array(z.string()).default([]),
+  emailRecipients: z.array(z.string().email()).default([]),
   idempotencyKey: z.string().min(8),
 });
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ farmId: string }> }
+  context: { params: Promise<{ farmId: string }> },
 ) {
   try {
     requirePermission(request, 'monitoring:read');
     const { farmId } = await context.params;
-    const data = await monitoringService.getDashboard(farmId);
+    const data = await alertPreferencesService.getPreferences(farmId);
     return Response.json({ success: true, data });
   } catch (error) {
     return createErrorResponse(error);
@@ -27,26 +29,26 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ farmId: string }> }
+  context: { params: Promise<{ farmId: string }> },
 ) {
   try {
     requirePermission(request, 'monitoring:write');
     const { farmId } = await context.params;
-    const input = triggerSchema.parse(await request.json());
     const userId = getRequestUserId(request);
-    const data = await monitoringService.triggerAlert({ farmId, userId, ...input });
+    const input = preferencesSchema.parse(await request.json());
 
-    if (!('reused' in data) && data?.id) {
-      const notification = await alertPreferencesService.dispatchForAlert({
-        farmId,
-        alertId: data.id,
-        level: input.level,
-        message: input.message,
-        userId,
-      });
-
-      return Response.json({ success: true, data: { ...data, notification } });
-    }
+    const data = await alertPreferencesService.savePreferences({
+      farmId,
+      userId,
+      idempotencyKey: input.idempotencyKey,
+      preferences: {
+        inApp: input.inApp,
+        sms: input.sms,
+        email: input.email,
+        smsRecipients: input.smsRecipients,
+        emailRecipients: input.emailRecipients,
+      },
+    });
 
     return Response.json({ success: true, data });
   } catch (error) {

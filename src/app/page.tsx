@@ -25,11 +25,14 @@ export default function HomePage() {
   const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
 
   const modules: Array<{ name: string; href: string; roles: Role[]; description: string }> = [
+    { name: 'Setup', href: '/setup', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Farm profile, sensors, and team role configuration.' },
     { name: 'Tasks', href: '/tasks', roles: ['MANAGER', 'WORKER'], description: 'Today, overdue, completed, and proof capture.' },
     { name: 'Finance', href: '/finance', roles: ['OWNER', 'MANAGER'], description: 'Spend requests, approvals, and budget visibility.' },
+    { name: 'Reports', href: '/reports', roles: ['OWNER', 'MANAGER'], description: 'Performance analytics and CSV/PDF/Excel exports.' },
     { name: 'Procurement', href: '/procurement', roles: ['OWNER', 'MANAGER'], description: 'Requests, purchase orders, and delivery checks.' },
     { name: 'Payroll', href: '/payroll', roles: ['OWNER', 'MANAGER'], description: 'Run preparation, approvals, and payout status.' },
     { name: 'Monitoring', href: '/monitoring', roles: ['OWNER', 'MANAGER'], description: 'Sensor state, alerts, and issue timeline.' },
+    { name: 'Messages', href: '/messages', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'In-app collaboration with media attachments.' },
     { name: 'Offline Center', href: '/offline', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Queue visibility, retries, and manual sync.' },
   ];
 

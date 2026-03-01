@@ -2,9 +2,15 @@ import { NextRequest } from 'next/server';
 import { AppError } from './errors';
 
 export type FarmPermission =
+  | 'setup:read'
+  | 'setup:write'
   | 'finance:read'
   | 'finance:write'
   | 'finance:approve'
+  | 'report:read'
+  | 'report:export'
+  | 'message:read'
+  | 'message:write'
   | 'updates:read'
   | 'updates:write'
   | 'digest:read'
@@ -25,9 +31,15 @@ type FarmRole = 'OWNER' | 'MANAGER' | 'WORKER';
 
 const roleMatrix: Record<FarmRole, FarmPermission[]> = {
   OWNER: [
+    'setup:read',
+    'setup:write',
     'finance:read',
     'finance:write',
     'finance:approve',
+    'report:read',
+    'report:export',
+    'message:read',
+    'message:write',
     'updates:read',
     'updates:write',
     'digest:read',
@@ -45,8 +57,14 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
     'payroll:pay',
   ],
   MANAGER: [
+    'setup:read',
+    'setup:write',
     'finance:read',
     'finance:write',
+    'report:read',
+    'report:export',
+    'message:read',
+    'message:write',
     'updates:read',
     'updates:write',
     'digest:read',
@@ -61,7 +79,16 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
     'payroll:read',
     'payroll:write',
   ],
-  WORKER: ['updates:read', 'updates:write', 'incident:read', 'incident:write', 'procurement:read'],
+  WORKER: [
+    'setup:read',
+    'updates:read',
+    'updates:write',
+    'message:read',
+    'message:write',
+    'incident:read',
+    'incident:write',
+    'procurement:read',
+  ],
 };
 
 export function getRequestRole(request: NextRequest): FarmRole {

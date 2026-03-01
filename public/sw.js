@@ -16,6 +16,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  if (url.pathname.startsWith('/_next/') || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   // Stale-while-revalidate strategy for UI assets
   if (event.request.mode === 'navigate' || event.request.destination === 'script' || event.request.destination === 'style') {
     event.respondWith(

@@ -1,8 +1,10 @@
 export type RouteRule = { prefix: string; roles: string[] };
 
 export const ROUTE_RULES: RouteRule[] = [
+  { prefix: '/setup', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/tasks', roles: ['MANAGER', 'WORKER'] },
   { prefix: '/finance', roles: ['OWNER', 'MANAGER'] },
+  { prefix: '/reports', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/inventory', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/procurement', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/payroll', roles: ['OWNER', 'MANAGER'] },
@@ -10,6 +12,7 @@ export const ROUTE_RULES: RouteRule[] = [
   { prefix: '/monitoring', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/audits', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/vendor', roles: ['OWNER', 'MANAGER'] },
+  { prefix: '/messages', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/updates/daily', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/updates', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/incidents', roles: ['OWNER', 'MANAGER', 'WORKER'] },

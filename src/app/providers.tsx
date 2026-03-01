@@ -74,6 +74,38 @@ export function Providers({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return;
+    }
+
+    const manageServiceWorker = async () => {
+      if (process.env.NODE_ENV === 'development') {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+
+        if ('caches' in window) {
+          const cacheKeys = await caches.keys();
+          await Promise.all(cacheKeys
+            .filter((key) => key.startsWith('farmops-') || key.startsWith('farm-ops-'))
+            .map((key) => caches.delete(key)));
+        }
+
+        return;
+      }
+
+      try {
+        await navigator.serviceWorker.register('/sw.js');
+      } catch (error) {
+        captureAppException(error instanceof Error ? error : new Error('Failed to register service worker'), {
+          tags: { scope: 'service-worker.register' },
+        });
+      }
+    };
+
+    void manageServiceWorker();
+  }, []);
+
   const setThemeMode = (nextMode: ThemeMode) => {
     setMode(nextMode);
     setTheme(nextMode);

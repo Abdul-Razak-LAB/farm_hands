@@ -11,6 +11,7 @@ import { hasRouteAccess, ROUTE_RULES } from './route-access';
 import { 
   HomeIcon, 
   CheckCircleIcon, 
+  ChatBubbleLeftRightIcon,
   BanknotesIcon, 
   ClipboardDocumentCheckIcon,
   SignalIcon,
@@ -19,7 +20,8 @@ import {
   CalendarDaysIcon,
   ChartBarIcon,
   BellAlertIcon,
-  BuildingStorefrontIcon
+  BuildingStorefrontIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { useOutboxStore } from '@/lib/store/outbox';
 import { useIntegrationStatus } from '@/hooks/use-integration-status';
@@ -145,14 +147,17 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { name: 'Home', href: '/', icon: HomeIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
+    { name: 'Setup', href: '/setup', icon: Cog6ToothIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Tasks', href: '/tasks', icon: CheckCircleIcon, roles: ['MANAGER', 'WORKER'] },
     { name: 'Finance', href: '/finance', icon: BanknotesIcon, roles: ['OWNER', 'MANAGER'] },
+    { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Updates', href: '/updates', icon: CalendarDaysIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Digest', href: '/digest', icon: ChartBarIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Procure', href: '/procurement', icon: ShoppingCartIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Payroll', href: '/payroll', icon: CreditCardIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Monitor', href: '/monitoring', icon: BellAlertIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Incident', href: '/incidents', icon: BellAlertIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
+    { name: 'Messages', href: '/messages', icon: ChatBubbleLeftRightIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Vendor', href: '/vendor', icon: BuildingStorefrontIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Audits', href: '/audits', icon: ClipboardDocumentCheckIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Offline', href: '/offline', icon: SignalIcon, roles: ['OWNER', 'MANAGER', 'WORKER'], badge: pendingCount },

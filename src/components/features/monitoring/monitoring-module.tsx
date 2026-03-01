@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/layout/auth-provider';
 import { formatDate } from '@/lib/utils';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type ApiEnvelope<T> = {
@@ -28,6 +28,7 @@ async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
 
 export function MonitoringModule() {
   const { farmId } = useAuth();
+  const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
   const [level, setLevel] = useState<'INFO' | 'WARNING' | 'CRITICAL'>('WARNING');
   const [commodityPrice, setCommodityPrice] = useState(360);
@@ -129,6 +130,30 @@ export function MonitoringModule() {
 
   const dashboard = dashboardQuery.data;
   const vra = vraQuery.data;
+
+  useEffect(() => {
+    if (!farmId) return;
+
+    const streamUrl = `/api/farms/${farmId}/monitoring/stream`;
+    const eventSource = new EventSource(streamUrl);
+
+    eventSource.addEventListener('dashboard', (event) => {
+      try {
+        const payload = JSON.parse((event as MessageEvent).data);
+        queryClient.setQueryData(['monitoring-dashboard', farmId], payload);
+      } catch {
+        void dashboardQuery.refetch();
+      }
+    });
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [dashboardQuery, farmId, queryClient]);
 
   const fieldLeaderboard = useMemo(
     () => (Array.isArray(dashboard?.fieldLeaderboard) ? dashboard.fieldLeaderboard : []),

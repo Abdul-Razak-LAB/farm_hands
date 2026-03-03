@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/components/layout/auth-provider';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, XMarkIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
@@ -16,6 +17,8 @@ type SpendRequestRecord = {
 export function ApprovalInbox() {
     const { farmId, role } = useAuth();
     const queryClient = useQueryClient();
+    const canDecide = role === 'OWNER' || role === 'MANAGER';
+    const [actionMessage, setActionMessage] = useState('');
 
     const requestsQuery = useQuery({
         queryKey: ['finance-requests', farmId],
@@ -34,22 +37,31 @@ export function ApprovalInbox() {
                 }),
             }
         ),
+        onMutate: () => {
+            setActionMessage('');
+        },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['finance-requests', farmId] });
             void queryClient.invalidateQueries({ queryKey: ['finance-budgets', farmId] });
+            setActionMessage('Request decision saved successfully.');
         },
     });
 
     const pendingRequests = (requestsQuery.data ?? []).filter((request) => request.status === 'PENDING');
 
     const handleDecision = async (id: string, decision: 'APPROVED' | 'REJECTED') => {
-        if (!farmId || role !== 'OWNER') return;
+        if (!farmId || !canDecide) return;
         decisionMutation.mutate({ id, decision });
     };
 
     return (
         <div className="p-4 space-y-6">
             <h1 className="text-2xl font-bold">Pending Approvals</h1>
+            {actionMessage ? (
+                <p className="text-[11px] rounded-md border border-primary/30 bg-primary/5 p-2 text-primary">
+                    {actionMessage}
+                </p>
+            ) : null}
 
             <div className="grid gap-4">
                 {!farmId ? (
@@ -87,7 +99,7 @@ export function ApprovalInbox() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => handleDecision(req.id, 'APPROVED')}
-                                    disabled={decisionMutation.isPending || role !== 'OWNER'}
+                                    disabled={decisionMutation.isPending || !canDecide}
                                     className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <CheckIcon className="h-5 w-5" />
@@ -95,13 +107,16 @@ export function ApprovalInbox() {
                                 </button>
                                 <button
                                     onClick={() => handleDecision(req.id, 'REJECTED')}
-                                    disabled={decisionMutation.isPending || role !== 'OWNER'}
+                                    disabled={decisionMutation.isPending || !canDecide}
                                     className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <XMarkIcon className="h-5 w-5" />
                                     Decline
                                 </button>
                             </div>
+                            {decisionMutation.isError ? (
+                                <p className="text-xs text-destructive">{decisionMutation.error instanceof Error ? decisionMutation.error.message : 'Unable to update request decision.'}</p>
+                            ) : null}
                         </div>
                     ))
                 )}

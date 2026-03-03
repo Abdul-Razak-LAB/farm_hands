@@ -67,6 +67,7 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
     'marketplace:write',
     'finance:read',
     'finance:write',
+    'finance:approve',
     'report:read',
     'report:export',
     'message:read',

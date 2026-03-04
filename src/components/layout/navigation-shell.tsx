@@ -172,6 +172,11 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   const blockingIntegrations = integrationStatus.data?.upload === false
     ? ['upload']
     : [];
+  const isMediaRoute = pathname.startsWith('/tasks')
+    || pathname.startsWith('/vendor')
+    || pathname.startsWith('/updates')
+    || pathname.startsWith('/incidents');
+  const shouldShowUploadBanner = blockingIntegrations.length > 0 && isMediaRoute;
 
   if (isLoading) {
     return <div className="min-h-screen bg-background text-foreground" />;
@@ -255,7 +260,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       ) : null}
       </div>
       <main className="flex-1 pt-16 md:pt-0 pb-20 md:pb-8">
-        {blockingIntegrations.length > 0 ? (
+        {shouldShowUploadBanner ? (
           <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
               Upload integration is unavailable. Media upload controls are disabled until storage is configured.

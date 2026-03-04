@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOfflineAction } from '@/hooks/use-offline-sync';
 import { CameraIcon, MicrophoneIcon, VideoCameraIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
@@ -22,22 +22,29 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
   const integrationStatus = useIntegrationStatus();
   const [photoUrl, setPhotoUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [voiceUrl, setVoiceUrl] = useState('');
   const [voiceNote, setVoiceNote] = useState('');
   const [photoProgress, setPhotoProgress] = useState(0);
   const [videoProgress, setVideoProgress] = useState(0);
+  const [voiceProgress, setVoiceProgress] = useState(0);
   const [photoMeta, setPhotoMeta] = useState<UploadedAttachmentMeta | null>(null);
   const [videoMeta, setVideoMeta] = useState<UploadedAttachmentMeta | null>(null);
+  const [voiceMeta, setVoiceMeta] = useState<UploadedAttachmentMeta | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false);
   const [recording, setRecording] = useState(false);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [photoOnlyMode, setPhotoOnlyMode] = useState(false);
   const [metadataPreview, setMetadataPreview] = useState<{ lat: number; lng: number; capturedAt: string } | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
   const { mutate: completeTask, isPending } = useOfflineAction('tasks', 'TASK_COMPLETED');
 
-  const uploadAvailable = integrationStatus.data?.upload ?? false;
+  const uploadAvailable = integrationStatus.data?.upload !== false;
 
-  const uploadMedia = async (file: File, type: 'photo' | 'video') => {
+  const uploadMedia = async (file: File, type: 'photo' | 'video' | 'voice') => {
     if (!farmId) return;
 
     setMediaError(null);
@@ -78,32 +85,131 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
       return;
     }
 
-    try {
-      const durationSeconds = await getVideoDurationInSeconds(file);
-      if (durationSeconds < 5 || durationSeconds > 15) {
-        setMediaError('Video must be between 5 and 15 seconds.');
+    if (type === 'video') {
+      try {
+        const durationSeconds = await getVideoDurationInSeconds(file);
+        if (durationSeconds < 5 || durationSeconds > 15) {
+          setMediaError('Video must be between 5 and 15 seconds.');
+          return;
+        }
+      } catch {
+        setMediaError('Could not verify video length. Please retry.');
         return;
       }
-    } catch {
-      setMediaError('Could not verify video length. Please retry.');
+
+      setIsUploadingVideo(true);
+      setVideoProgress(0);
+      try {
+        const fileUrl = await uploadFileWithSignedEndpoint(endpoint, file, setVideoProgress);
+        setVideoUrl(fileUrl);
+        setVideoMeta({
+          fileName: file.name,
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+          fileUrl,
+        });
+      } finally {
+        setIsUploadingVideo(false);
+      }
       return;
     }
 
-    setIsUploadingVideo(true);
-    setVideoProgress(0);
-    try {
-      const fileUrl = await uploadFileWithSignedEndpoint(endpoint, file, setVideoProgress);
-      setVideoUrl(fileUrl);
-      setVideoMeta({
-        fileName: file.name,
-        contentType: file.type || 'application/octet-stream',
-        size: file.size,
-        fileUrl,
-      });
-    } finally {
-      setIsUploadingVideo(false);
+    if (type === 'voice') {
+      setIsUploadingVoice(true);
+      setVoiceProgress(0);
+      try {
+        const fileUrl = await uploadFileWithSignedEndpoint(endpoint, file, setVoiceProgress);
+        setVoiceUrl(fileUrl);
+        setVoiceMeta({
+          fileName: file.name,
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+          fileUrl,
+        });
+      } finally {
+        setIsUploadingVoice(false);
+      }
     }
   };
+
+  const stopVoiceRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+    }
+  };
+
+  const startVoiceRecording = async () => {
+    if (!uploadAvailable) {
+      reportIntegrationDegraded('upload', 'Voice upload unavailable during proof capture');
+      setMediaError('Voice upload is temporarily unavailable. You can still submit task notes.');
+      return;
+    }
+
+    if (typeof MediaRecorder === 'undefined') {
+      setMediaError('Voice recording is not supported on this browser.');
+      return;
+    }
+
+    try {
+      setMediaError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : '';
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
+      recordedChunksRef.current = [];
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const chunks = recordedChunksRef.current;
+        const audioType = recorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(chunks, { type: audioType });
+        const extension = audioType.includes('ogg') ? 'ogg' : 'webm';
+        const file = new File([audioBlob], `voice-${Date.now()}.${extension}`, { type: audioType });
+
+        recordedChunksRef.current = [];
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        setRecording(false);
+
+        if (file.size > 0) {
+          void uploadMedia(file, 'voice');
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch {
+      setRecording(false);
+      setMediaError('Could not access microphone. Check browser permission and retry.');
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.onstop = null;
+        recorder.stop();
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    };
+  }, []);
 
   const handleCapture = async () => {
     const capturedAt = new Date().toISOString();
@@ -129,9 +235,9 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
         attachments: {
           photo: photoUrl || undefined,
           video: videoUrl || undefined,
-          voice: voiceNote || undefined,
+          voice: voiceUrl || voiceNote || undefined,
         },
-        attachmentMetadata: [photoMeta, videoMeta].filter((item): item is UploadedAttachmentMeta => Boolean(item)),
+        attachmentMetadata: [photoMeta, videoMeta, voiceMeta].filter((item): item is UploadedAttachmentMeta => Boolean(item)),
       };
 
       setMetadataPreview({
@@ -144,9 +250,12 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
         onSuccess: () => {
           setPhotoUrl('');
           setVideoUrl('');
+          setVoiceUrl('');
           setPhotoMeta(null);
           setVideoMeta(null);
+          setVoiceMeta(null);
           setVoiceNote('');
+          setVoiceProgress(0);
           setRecording(false);
           onComplete();
         },
@@ -159,13 +268,14 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
         attachments: {
           photo: photoUrl || undefined,
           video: videoUrl || undefined,
-          voice: voiceNote || undefined,
+          voice: voiceUrl || voiceNote || undefined,
         },
-        attachmentMetadata: [photoMeta, videoMeta].filter((item): item is UploadedAttachmentMeta => Boolean(item)),
+        attachmentMetadata: [photoMeta, videoMeta, voiceMeta].filter((item): item is UploadedAttachmentMeta => Boolean(item)),
       }, {
         onSuccess: () => {
           setPhotoMeta(null);
           setVideoMeta(null);
+          setVoiceMeta(null);
           onComplete();
         },
       });
@@ -230,17 +340,26 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
             "flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-md transition-colors",
             recording ? "bg-destructive/10 border-destructive" : "hover:bg-accent"
           )}
-          onClick={() => setRecording(!recording)}
+          onClick={() => {
+            if (recording) {
+              stopVoiceRecording();
+              return;
+            }
+            void startVoiceRecording();
+          }}
+          disabled={!uploadAvailable || isUploadingPhoto || isUploadingVideo || isUploadingVoice}
         >
           <MicrophoneIcon className={cn("h-8 w-8", recording ? "text-destructive animate-pulse" : "text-muted-foreground")} />
-          <span className="text-[10px] mt-1 uppercase">{recording ? 'Recording...' : 'Add Voice'}</span>
+          <span className="text-[10px] mt-1 uppercase">
+            {recording ? 'Recording...' : isUploadingVoice ? `Uploading ${voiceProgress}%` : voiceUrl ? 'Voice Uploaded' : 'Add Voice'}
+          </span>
         </button>
       </div>
 
       <input
         value={voiceNote}
         onChange={(event) => setVoiceNote(event.target.value)}
-        placeholder="Voice transcript or note"
+        placeholder="Voice transcript or note (optional)"
         className="w-full h-10 rounded-md bg-accent/50 px-3 text-xs"
       />
 
@@ -252,7 +371,7 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
 
       <button
         onClick={handleCapture}
-        disabled={isPending || isUploadingPhoto || isUploadingVideo}
+        disabled={isPending || isUploadingPhoto || isUploadingVideo || isUploadingVoice}
         className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-md active:scale-95 transition-all shadow-md"
       >
         {isPending ? 'Queuing sync...' : 'Complete Task'}

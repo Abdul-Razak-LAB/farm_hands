@@ -46,7 +46,7 @@ export function VendorPortal() {
     const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const integrationStatus = useIntegrationStatus();
-    const uploadAvailable = integrationStatus.data?.upload ?? false;
+    const uploadAvailable = integrationStatus.data?.upload !== false;
 
     const ordersQuery = useQuery({
         queryKey: ['vendor-token-orders', token],

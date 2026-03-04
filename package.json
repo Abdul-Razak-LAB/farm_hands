@@ -11,7 +11,7 @@
     "test:run": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/prisma-generate.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.857.0",

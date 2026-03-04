@@ -168,8 +168,8 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   const filteredNav = navItems.filter((item) => item.roles.includes(role!));
 
   const hasRouteAccessForPath = hasRouteAccess(pathname, role, ROUTE_RULES);
-  const unavailableIntegrations = integrationStatus.data
-    ? (Object.entries(integrationStatus.data).filter(([, available]) => !available).map(([name]) => name))
+  const blockingIntegrations = integrationStatus.data?.upload === false
+    ? ['upload']
     : [];
 
   if (isLoading) {
@@ -254,10 +254,10 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       ) : null}
       </div>
       <main className="flex-1 pt-16 md:pt-0 pb-20 md:pb-8">
-        {unavailableIntegrations.length > 0 ? (
+        {blockingIntegrations.length > 0 ? (
           <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-              Limited integrations: {unavailableIntegrations.join(', ')}. Related controls are disabled until service is restored.
+              Upload integration is unavailable. Media upload controls are disabled until storage is configured.
             </div>
           </div>
         ) : null}

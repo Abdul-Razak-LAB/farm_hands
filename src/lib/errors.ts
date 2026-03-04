@@ -15,6 +15,21 @@ export class AppError extends Error {
   }
 }
 
+function isDatabaseUnavailableError(error: any) {
+  const message = String(error?.message || '').toLowerCase();
+  const name = String(error?.name || '');
+
+  return (
+    error?.code === 'P1001'
+    || error?.code === 'P1002'
+    || name === 'PrismaClientInitializationError'
+    || message.includes("can't reach database server")
+    || message.includes('can\'t reach database server')
+    || message.includes('failed to open a tls connection')
+    || message.includes('connection timed out')
+  );
+}
+
 export function createErrorResponse(error: any) {
   if (error instanceof AppError || (error?.name === 'AppError' && error?.code && error?.message)) {
     return Response.json(
@@ -65,7 +80,7 @@ export function createErrorResponse(error: any) {
     );
   }
 
-  if (error?.code === 'P1001' || error?.code === 'P1002') {
+  if (isDatabaseUnavailableError(error)) {
     return Response.json(
       {
         success: false,

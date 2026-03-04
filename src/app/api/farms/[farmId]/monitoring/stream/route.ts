@@ -20,24 +20,53 @@ export async function GET(
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         const encoder = new TextEncoder();
+        let closed = false;
+        let interval: ReturnType<typeof setInterval> | null = null;
 
-        const pushDashboard = async () => {
-          const dashboard = await monitoringService.getDashboard(farmId);
-          controller.enqueue(encoder.encode(serializeEvent('dashboard', dashboard)));
+        const safeEnqueue = (chunk: string) => {
+          if (closed) return;
+          try {
+            controller.enqueue(encoder.encode(chunk));
+          } catch {
+            closed = true;
+          }
         };
 
-        controller.enqueue(encoder.encode(': connected\n\n'));
-        await pushDashboard();
+        const safeClose = () => {
+          if (closed) return;
+          closed = true;
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+          try {
+            controller.close();
+          } catch {
+          }
+        };
 
-        const interval = setInterval(() => {
+        const pushDashboard = async () => {
+          if (closed) return;
+          const dashboard = await monitoringService.getDashboard(farmId);
+          safeEnqueue(serializeEvent('dashboard', dashboard));
+        };
+
+        safeEnqueue(': connected\n\n');
+        try {
+          await pushDashboard();
+        } catch {
+          safeEnqueue(serializeEvent('error', { message: 'stream_update_failed' }));
+        }
+
+        interval = setInterval(() => {
           void pushDashboard().catch(() => {
-            controller.enqueue(encoder.encode(serializeEvent('error', { message: 'stream_update_failed' })));
+            safeEnqueue(serializeEvent('error', { message: 'stream_update_failed' }));
           });
         }, 10_000);
 
         const onAbort = () => {
-          clearInterval(interval);
-          controller.close();
+          request.signal.removeEventListener('abort', onAbort);
+          safeClose();
         };
 
         request.signal.addEventListener('abort', onAbort, { once: true });

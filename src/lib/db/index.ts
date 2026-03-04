@@ -22,11 +22,38 @@ export interface LocalTask {
   data: any;
 }
 
+export interface LocalEvent {
+  id: string;
+  farmId: string;
+  type: string;
+  payload: any;
+  createdAt: Date;
+}
+
+export interface LocalMedia {
+  id: string;
+  farmId: string;
+  blob: Blob;
+  metadata: any;
+  synced: boolean;
+  createdAt: Date;
+}
+
+export interface SyncMetaRecord {
+  key: string;
+  value: any;
+}
+
 export class FarmDB extends Dexie {
-  outbox!: Table<OutboxEntry>;
-  local_tasks!: Table<LocalTask>;
-  local_media!: Table<{ id: string; blob: Blob; metadata: any; synced: boolean }>;
-  sync_meta!: Table<{ key: string; value: any }>;
+  outbox_jobs!: Table<OutboxEntry, string>;
+  local_events!: Table<LocalEvent, string>;
+  local_tasks!: Table<LocalTask, string>;
+  local_media!: Table<LocalMedia, string>;
+  sync_meta!: Table<SyncMetaRecord, string>;
+
+  get outbox() {
+    return this.outbox_jobs;
+  }
 
   constructor() {
     super('FarmOpsDB');
@@ -35,6 +62,21 @@ export class FarmDB extends Dexie {
       local_tasks: 'id, farmId, status, dueDate',
       local_media: 'id, synced',
       sync_meta: 'key'
+    });
+
+    this.version(2).stores({
+      outbox: null,
+      outbox_jobs: 'id, domain, status, createdAt, nextAttemptAt',
+      local_events: 'id, farmId, type, createdAt',
+      local_tasks: 'id, farmId, status, dueDate',
+      local_media: 'id, farmId, synced, createdAt',
+      sync_meta: 'key'
+    }).upgrade(async (tx) => {
+      const legacyOutbox = await tx.table('outbox').toArray();
+
+      if (legacyOutbox.length > 0) {
+        await tx.table('outbox_jobs').bulkPut(legacyOutbox);
+      }
     });
   }
 }

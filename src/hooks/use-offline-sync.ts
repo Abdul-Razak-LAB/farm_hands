@@ -4,6 +4,8 @@ import { useOutboxStore } from '@/lib/store/outbox';
 import { useCallback, useEffect } from 'react';
 import { toCompletedUpdate, toFailedUpdate } from './outbox-transitions';
 
+const SYNC_BATCH_SIZE = 20;
+
 export function useOfflineAction<T>(domain: string, action: string) {
   const queryClient = useQueryClient();
   const setPendingCount = useOutboxStore((state) => state.setPendingCount);
@@ -75,10 +77,22 @@ export function useSyncOrchestrator({ autoStart = true }: { autoStart?: boolean 
       return;
     }
 
-    const pending = await db.outbox
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const count = await db.outbox.where('status').equals('PENDING').count();
+      setPendingCount(count);
+      return;
+    }
+
+    const retryable = await db.outbox
       .where('status')
       .anyOf(['PENDING', 'FAILED'])
       .toArray();
+
+    const now = Date.now();
+    const pending = retryable
+      .filter((item) => !item.nextAttemptAt || new Date(item.nextAttemptAt).getTime() <= now)
+      .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
+      .slice(0, SYNC_BATCH_SIZE);
 
     if (pending.length === 0) {
       const count = await db.outbox.where('status').equals('PENDING').count();
@@ -112,8 +126,27 @@ export function useSyncOrchestrator({ autoStart = true }: { autoStart?: boolean 
     if (!autoStart) return;
     if (typeof window === 'undefined') return;
 
-    window.addEventListener('online', runSync);
-    return () => window.removeEventListener('online', runSync);
+    void runSync();
+
+    const onReconnect = () => {
+      void runSync();
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void runSync();
+      }
+    };
+
+    window.addEventListener('online', onReconnect);
+    window.addEventListener('focus', onReconnect);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      window.removeEventListener('online', onReconnect);
+      window.removeEventListener('focus', onReconnect);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [autoStart, runSync]);
 
   return { runSync };

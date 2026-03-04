@@ -160,6 +160,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
     { name: 'Monitor', href: '/monitoring', icon: BellAlertIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Incident', href: '/incidents', icon: BellAlertIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Messages', href: '/messages', icon: ChatBubbleLeftRightIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
+    { name: 'Consultation', href: '/consultation', icon: ChatBubbleLeftRightIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
     { name: 'Vendor', href: '/vendor', icon: BuildingStorefrontIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Audits', href: '/audits', icon: ClipboardDocumentCheckIcon, roles: ['OWNER', 'MANAGER'] },
     { name: 'Offline', href: '/offline', icon: SignalIcon, roles: ['OWNER', 'MANAGER', 'WORKER'], badge: pendingCount },

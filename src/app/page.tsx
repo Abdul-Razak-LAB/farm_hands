@@ -35,6 +35,7 @@ export default function HomePage() {
     { name: 'Payroll', href: '/payroll', roles: ['OWNER', 'MANAGER'], description: 'Run preparation, approvals, and payout status.' },
     { name: 'Monitoring', href: '/monitoring', roles: ['OWNER', 'MANAGER'], description: 'Sensor state, alerts, and issue timeline.' },
     { name: 'Messages', href: '/messages', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'In-app collaboration with media attachments.' },
+    { name: 'Consultation', href: '/consultation', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Request expert advice, chat, and track resolution status.' },
     { name: 'Offline Center', href: '/offline', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Queue visibility, retries, and manual sync.' },
   ];
 

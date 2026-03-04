@@ -14,6 +14,7 @@ export const ROUTE_RULES: RouteRule[] = [
   { prefix: '/audits', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/vendor', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/messages', roles: ['OWNER', 'MANAGER', 'WORKER'] },
+  { prefix: '/consultation', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/updates/daily', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/updates', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/incidents', roles: ['OWNER', 'MANAGER', 'WORKER'] },

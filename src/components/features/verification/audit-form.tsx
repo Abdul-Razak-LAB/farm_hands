@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useOfflineAction } from '@/hooks/use-offline-sync';
-import { CheckBadgeIcon, XCircleIcon, CameraIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon, XCircleIcon, CameraIcon } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/layout/auth-provider';
+import { uploadFileWithSignedEndpoint } from '@/lib/media-upload-client';
+import { useIntegrationStatus } from '@/hooks/use-integration-status';
 
 interface AuditorItem {
   id: string;
@@ -19,8 +22,22 @@ const AUDIT_QUESTIONS: AuditorItem[] = [
 ];
 
 export function VerificationAudit() {
-  const [results, setResults] = useState<Record<string, { value: any, comment?: string }>>({});
+  const { farmId } = useAuth();
+  const integrationStatus = useIntegrationStatus();
+  const [results, setResults] = useState<Record<string, {
+    value: any;
+    comment?: string;
+    evidencePhotoUrl?: string;
+    evidencePhotoName?: string;
+    evidenceCapturedAt?: string;
+  }>>({});
+  const [captureTargetId, setCaptureTargetId] = useState<string | null>(null);
+  const [uploadingQuestionId, setUploadingQuestionId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { mutate: submitAudit, isPending } = useOfflineAction('verification', 'AUDIT_COMPLETED');
+  const uploadAvailable = integrationStatus.data?.upload !== false;
 
   const updateResponse = (id: string, value: any) => {
     setResults(prev => ({ ...prev, [id]: { ...prev[id], value } }));
@@ -28,6 +45,52 @@ export function VerificationAudit() {
 
   const addComment = (id: string, comment: string) => {
     setResults(prev => ({ ...prev, [id]: { ...prev[id], comment } }));
+  };
+
+  const openCameraForQuestion = (id: string) => {
+    if (!uploadAvailable) {
+      setMediaError('Upload integration is unavailable. Evidence photo capture is disabled.');
+      return;
+    }
+
+    setMediaError(null);
+    setCaptureTargetId(id);
+    fileInputRef.current?.click();
+  };
+
+  const handleEvidenceCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    const questionId = captureTargetId;
+
+    if (!file || !questionId || !farmId) {
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingQuestionId(questionId);
+    setUploadProgress(0);
+    setMediaError(null);
+
+    try {
+      const endpoint = `/api/farms/${farmId}/media/signed-upload`;
+      const evidencePhotoUrl = await uploadFileWithSignedEndpoint(endpoint, file, setUploadProgress);
+
+      setResults((prev) => ({
+        ...prev,
+        [questionId]: {
+          ...prev[questionId],
+          evidencePhotoUrl,
+          evidencePhotoName: file.name,
+          evidenceCapturedAt: new Date().toISOString(),
+        },
+      }));
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : 'Unable to upload evidence photo.');
+    } finally {
+      setUploadingQuestionId(null);
+      setCaptureTargetId(null);
+      event.target.value = '';
+    }
   };
 
   const handleFinish = () => {
@@ -47,6 +110,23 @@ export function VerificationAudit() {
       </div>
 
       <div className="space-y-4">
+        {mediaError ? (
+          <p className="text-[11px] rounded-md border border-destructive/30 bg-destructive/5 p-2 text-destructive">
+            {mediaError}
+          </p>
+        ) : null}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(event) => {
+            void handleEvidenceCapture(event);
+          }}
+          className="hidden"
+        />
+
         {AUDIT_QUESTIONS.map((q) => (
           <div key={q.id} className="p-5 bg-card border rounded-2xl shadow-sm space-y-4">
             <p className="text-sm font-semibold leading-tight">{q.question}</p>
@@ -82,8 +162,13 @@ export function VerificationAudit() {
             )}
 
             <div className="flex gap-2">
-              <button 
-                className="h-10 w-10 flex items-center justify-center rounded-xl bg-accent/50 text-muted-foreground"
+              <button
+                onClick={() => openCameraForQuestion(q.id)}
+                disabled={!uploadAvailable || uploadingQuestionId === q.id}
+                className={cn(
+                  "h-10 w-10 flex items-center justify-center rounded-xl text-muted-foreground disabled:opacity-50",
+                  results[q.id]?.evidencePhotoUrl ? 'bg-primary/20 text-primary' : 'bg-accent/50'
+                )}
                 title="Attach Evidence Photo"
               >
                 <CameraIcon className="h-5 w-5" />
@@ -93,6 +178,14 @@ export function VerificationAudit() {
                 onChange={(e) => addComment(q.id, e.target.value)}
                 className="flex-1 bg-accent/20 border-none rounded-xl px-4 text-xs h-10 italic"
               />
+            </div>
+
+            <div className="text-[11px] text-muted-foreground">
+              {uploadingQuestionId === q.id
+                ? `Uploading evidence ${uploadProgress}%`
+                : results[q.id]?.evidencePhotoUrl
+                  ? `Evidence attached: ${results[q.id]?.evidencePhotoName || 'photo'}`
+                  : 'No evidence photo attached'}
             </div>
           </div>
         ))}

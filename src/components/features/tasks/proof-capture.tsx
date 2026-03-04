@@ -10,6 +10,13 @@ import { useIntegrationStatus } from '@/hooks/use-integration-status';
 import { reportIntegrationDegraded } from '@/lib/observability';
 import { compressImageFile, getVideoDurationInSeconds, isNearStorageQuota } from '@/lib/media-safety';
 
+type UploadedAttachmentMeta = {
+  fileName: string;
+  contentType: string;
+  size: number;
+  fileUrl: string;
+};
+
 export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplete: () => void }) {
   const { farmId } = useAuth();
   const integrationStatus = useIntegrationStatus();
@@ -18,6 +25,8 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
   const [voiceNote, setVoiceNote] = useState('');
   const [photoProgress, setPhotoProgress] = useState(0);
   const [videoProgress, setVideoProgress] = useState(0);
+  const [photoMeta, setPhotoMeta] = useState<UploadedAttachmentMeta | null>(null);
+  const [videoMeta, setVideoMeta] = useState<UploadedAttachmentMeta | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -57,6 +66,12 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
         const compressed = await compressImageFile(file);
         const fileUrl = await uploadFileWithSignedEndpoint(endpoint, compressed, setPhotoProgress);
         setPhotoUrl(fileUrl);
+        setPhotoMeta({
+          fileName: file.name,
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+          fileUrl,
+        });
       } finally {
         setIsUploadingPhoto(false);
       }
@@ -79,6 +94,12 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
     try {
       const fileUrl = await uploadFileWithSignedEndpoint(endpoint, file, setVideoProgress);
       setVideoUrl(fileUrl);
+      setVideoMeta({
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+        size: file.size,
+        fileUrl,
+      });
     } finally {
       setIsUploadingVideo(false);
     }
@@ -110,6 +131,7 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
           video: videoUrl || undefined,
           voice: voiceNote || undefined,
         },
+        attachmentMetadata: [photoMeta, videoMeta].filter((item): item is UploadedAttachmentMeta => Boolean(item)),
       };
 
       setMetadataPreview({
@@ -122,6 +144,8 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
         onSuccess: () => {
           setPhotoUrl('');
           setVideoUrl('');
+          setPhotoMeta(null);
+          setVideoMeta(null);
           setVoiceNote('');
           setRecording(false);
           onComplete();
@@ -137,8 +161,13 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
           video: videoUrl || undefined,
           voice: voiceNote || undefined,
         },
+        attachmentMetadata: [photoMeta, videoMeta].filter((item): item is UploadedAttachmentMeta => Boolean(item)),
       }, {
-        onSuccess: () => onComplete(),
+        onSuccess: () => {
+          setPhotoMeta(null);
+          setVideoMeta(null);
+          onComplete();
+        },
       });
     }
   };

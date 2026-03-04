@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/layout/auth-provider";
+import { ErrorBoundary } from "@/components/layout/error-boundary";
 import { NavigationShell } from "@/components/layout/navigation-shell";
 import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next"
@@ -36,13 +37,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <Providers>
-          <AuthProvider>
-            <NavigationShell>
-              {children}
-            </NavigationShell>
-          </AuthProvider>
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            <AuthProvider>
+              <NavigationShell>
+                {children}
+              </NavigationShell>
+            </AuthProvider>
+          </Providers>
+        </ErrorBoundary>
         <Analytics />
       </body>
     </html>

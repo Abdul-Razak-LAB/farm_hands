@@ -3,6 +3,7 @@
 import { useAuth } from '@/components/layout/auth-provider';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type ApiEnvelope<T> = {
@@ -28,7 +29,9 @@ async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
 
 export function MonitoringModule() {
   const { farmId } = useAuth();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
+  const [isPageVisible, setIsPageVisible] = useState(true);
   const [message, setMessage] = useState('');
   const [level, setLevel] = useState<'INFO' | 'WARNING' | 'CRITICAL'>('WARNING');
   const [commodityPrice, setCommodityPrice] = useState(360);
@@ -132,7 +135,22 @@ export function MonitoringModule() {
   const vra = vraQuery.data;
 
   useEffect(() => {
-    if (!farmId) return;
+    const updateVisibility = () => {
+      setIsPageVisible(document.visibilityState === 'visible');
+    };
+
+    updateVisibility();
+    document.addEventListener('visibilitychange', updateVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', updateVisibility);
+    };
+  }, []);
+
+  const shouldConnectStream = Boolean(farmId) && pathname.startsWith('/monitoring') && isPageVisible;
+
+  useEffect(() => {
+    if (!farmId || !shouldConnectStream) return;
 
     const streamUrl = `/api/farms/${farmId}/monitoring/stream`;
     const eventSource = new EventSource(streamUrl);
@@ -142,7 +160,7 @@ export function MonitoringModule() {
         const payload = JSON.parse((event as MessageEvent).data);
         queryClient.setQueryData(['monitoring-dashboard', farmId], payload);
       } catch {
-        void dashboardQuery.refetch();
+        void queryClient.invalidateQueries({ queryKey: ['monitoring-dashboard', farmId] });
       }
     });
 
@@ -153,7 +171,7 @@ export function MonitoringModule() {
     return () => {
       eventSource.close();
     };
-  }, [dashboardQuery, farmId, queryClient]);
+  }, [farmId, queryClient, shouldConnectStream]);
 
   const fieldLeaderboard = useMemo(
     () => (Array.isArray(dashboard?.fieldLeaderboard) ? dashboard.fieldLeaderboard : []),

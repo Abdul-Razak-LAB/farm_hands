@@ -7,7 +7,7 @@ vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: (...args: unknown[]) => checkRateLimitMock(...args),
 }));
 
-describe('middleware rate limiting', () => {
+describe('proxy rate limiting', () => {
   beforeEach(() => {
     checkRateLimitMock.mockReset();
   });
@@ -20,7 +20,7 @@ describe('middleware rate limiting', () => {
       remaining: 0,
     });
 
-    const { middleware } = await import('./middleware');
+    const { proxy } = await import('./proxy');
 
     const request = new NextRequest('http://localhost:3000/api/auth/login', {
       method: 'POST',
@@ -30,7 +30,7 @@ describe('middleware rate limiting', () => {
       },
     });
 
-    const response = await middleware(request);
+    const response = await proxy(request);
     const json = await response.json();
 
     expect(response.status).toBe(429);

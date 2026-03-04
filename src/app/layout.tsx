@@ -1,19 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/layout/auth-provider";
 import { NavigationShell } from "@/components/layout/navigation-shell";
 import { Providers } from "./providers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "FarmOps PWA",
@@ -45,7 +35,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="antialiased">
         <Providers>
           <AuthProvider>
             <NavigationShell>
@@ -53,6 +43,7 @@ export default function RootLayout({
             </NavigationShell>
           </AuthProvider>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

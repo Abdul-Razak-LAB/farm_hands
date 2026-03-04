@@ -22,6 +22,7 @@ export default function HomePage() {
   const [inviteError, setInviteError] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [isInviting, setIsInviting] = useState(false);
+  const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
 
   const modules: Array<{ name: string; href: string; roles: Role[]; description: string }> = [
@@ -52,20 +53,30 @@ export default function HomePage() {
   const loadInvites = async () => {
     if (!canManageInvites || !farmId) {
       setPendingInvites([]);
+      setIsLoadingInvites(false);
       return;
     }
 
-    const response = await fetch(`/api/farms/${farmId}/invites`, {
-      headers: inviteHeaders,
-      cache: 'no-store',
-    });
-    const result = await response.json();
+    try {
+      setIsLoadingInvites(true);
+      const response = await fetch(`/api/farms/${farmId}/invites`, {
+        headers: inviteHeaders,
+        cache: 'no-store',
+      });
+      const result = await response.json();
 
-    if (!result.success) {
-      throw new Error(result.error?.message || 'Failed to load invites.');
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to load invites.');
+      }
+
+      setPendingInvites(result.data as PendingInvite[]);
+      setInviteError('');
+    } catch (error) {
+      setPendingInvites([]);
+      setInviteError(error instanceof Error ? error.message : 'Failed to load invites.');
+    } finally {
+      setIsLoadingInvites(false);
     }
-
-    setPendingInvites(result.data as PendingInvite[]);
   };
 
   useEffect(() => {
@@ -232,7 +243,17 @@ export default function HomePage() {
         <section className="space-y-3 rounded-2xl border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Team Invites</h2>
-            <span className="text-xs text-muted-foreground uppercase tracking-wide">Owner/Manager</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">Owner/Manager</span>
+              <button
+                type="button"
+                onClick={() => void loadInvites()}
+                disabled={isLoadingInvites}
+                className="h-8 rounded-md border px-3 text-xs font-semibold disabled:opacity-60"
+              >
+                {isLoadingInvites ? 'Retrying...' : 'Retry'}
+              </button>
+            </div>
           </div>
 
           <form className="grid gap-2 md:grid-cols-[1fr_160px_auto]" onSubmit={submitInvite}>
@@ -265,7 +286,9 @@ export default function HomePage() {
           {inviteMessage ? <p className="text-xs text-primary">{inviteMessage}</p> : null}
 
           <div className="space-y-2">
-            {pendingInvites.length === 0 ? (
+            {isLoadingInvites ? (
+              <p className="text-xs text-muted-foreground">Loading invites...</p>
+            ) : pendingInvites.length === 0 ? (
               <p className="text-xs text-muted-foreground">No pending invites.</p>
             ) : (
               pendingInvites.map((invite) => (

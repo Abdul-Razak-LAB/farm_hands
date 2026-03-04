@@ -65,6 +65,19 @@ export function createErrorResponse(error: any) {
     );
   }
 
+  if (error?.code === 'P1001' || error?.code === 'P1002') {
+    return Response.json(
+      {
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database is temporarily unavailable. Please try again shortly.',
+        },
+      },
+      { status: 503 }
+    );
+  }
+
   logger.error('Unhandled API error', {
     code: error?.code,
     message: error?.message,

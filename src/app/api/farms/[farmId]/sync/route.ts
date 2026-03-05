@@ -3,6 +3,7 @@ import { syncService } from '@/services/sync/sync-service';
 import type { SyncEvent } from '@/services/sync/sync-service';
 import { createErrorResponse } from '@/lib/errors';
 import { z } from 'zod';
+import { requireFarmPermission } from '@/lib/permissions';
 
 const MAX_SYNC_BATCH = 100;
 const MAX_PAGE_SIZE = 200;
@@ -25,17 +26,15 @@ export async function POST(
 ) {
   try {
     const { farmId } = await context.params;
+    const auth = await requireFarmPermission(request, farmId, 'updates:write');
     const body = await request.json();
     const { events, deviceId } = syncSchema.parse(body);
-    
-    // In a real app, userId would come from the session context
-    const userId = 'user_id_from_session';
 
     const normalizedEvents: SyncEvent[] = events.map((event) => ({
       type: event.type,
       payload: event.payload,
       idempotencyKey: event.idempotencyKey,
-      userId,
+      userId: auth.userId,
       deviceId,
     }));
 
@@ -53,6 +52,7 @@ export async function GET(
 ) {
   try {
     const { farmId } = await context.params;
+    await requireFarmPermission(request, farmId, 'updates:read');
     const rawCursor = request.nextUrl.searchParams.get('cursor');
     const cursor = cursorSchema.parse(rawCursor);
     const limit = pageSizeSchema.parse(request.nextUrl.searchParams.get('limit') ?? undefined) ?? 100;

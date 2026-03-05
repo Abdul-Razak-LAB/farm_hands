@@ -167,6 +167,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   ];
 
   const filteredNav = navItems.filter((item) => item.roles.includes(role!));
+  const activeNavItem = filteredNav.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
 
   const hasRouteAccessForPath = hasRouteAccess(pathname, role, ROUTE_RULES);
   const blockingIntegrations = integrationStatus.data?.upload === false
@@ -222,7 +223,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-      <div ref={controlsMenuRef} className="fixed top-3 right-3 z-50">
+      <div ref={controlsMenuRef} className="fixed right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50">
         <button
           onClick={() => setControlsOpen((current) => !current)}
           className="h-10 rounded-full border bg-background/90 backdrop-blur px-3 text-[10px] font-semibold uppercase"
@@ -259,7 +260,12 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
       </div>
-      <main className="flex-1 pt-16 md:pt-0 pb-20 md:pb-8">
+      <main className="flex-1 pt-16 md:pt-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-1 md:hidden">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {activeNavItem?.name || 'Workspace'}
+          </p>
+        </div>
         {shouldShowUploadBanner ? (
           <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
@@ -280,7 +286,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       </main>
       
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/80 backdrop-blur-md px-2 py-2 md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/90 backdrop-blur-md px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
         <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background/95 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background/95 to-transparent" />
         <ul className="flex items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar px-1">

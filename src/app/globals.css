@@ -50,7 +50,23 @@
   * {
     @apply border-border;
   }
+  html,
+  body {
+    min-height: 100%;
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

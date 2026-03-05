@@ -48,7 +48,7 @@ export function ReportsModule() {
         <p className="text-xs text-muted-foreground uppercase font-semibold">Farm performance insights and exports</p>
       </header>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         <div className="p-4 rounded-xl border bg-card">
           <p className="text-[10px] uppercase text-muted-foreground">Yield Score</p>
           <p className="text-2xl font-black">{summary?.cropHealthAndYield?.estimatedYieldScore ?? 0}</p>

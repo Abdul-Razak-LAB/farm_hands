@@ -141,7 +141,7 @@ export function ProcurementModule() {
           placeholder="Item description"
           className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
         />
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <input
             type="number"
             value={itemQty}
@@ -206,7 +206,7 @@ export function ProcurementModule() {
         <h2 className="text-sm font-bold uppercase mb-3">Recent POs</h2>
         <div className="space-y-2">
           {ordersQuery.data?.length ? ordersQuery.data.map((order: any) => (
-            <div key={order.id} className="p-2 rounded-md bg-accent/20 text-xs flex justify-between">
+            <div key={order.id} className="p-2 rounded-md bg-accent/20 text-xs flex flex-wrap items-center justify-between gap-2">
               <span className="font-medium">{order.id.slice(0, 10)}</span>
               <span className="uppercase text-muted-foreground">{order.status}</span>
             </div>

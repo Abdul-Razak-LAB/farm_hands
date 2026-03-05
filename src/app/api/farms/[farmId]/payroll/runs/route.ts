@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/errors';
-import { getRequestUserId, requirePermission } from '@/lib/permissions';
+import { requireFarmPermission } from '@/lib/permissions';
 import { payrollService } from '@/services/payroll/payroll-service';
 
 const createRunSchema = z.object({
@@ -20,8 +20,8 @@ export async function GET(
   context: { params: Promise<{ farmId: string }> }
 ) {
   try {
-    requirePermission(request, 'payroll:read');
     const { farmId } = await context.params;
+    await requireFarmPermission(request, farmId, 'payroll:read');
     const data = await payrollService.listRuns(farmId);
     return Response.json({ success: true, data });
   } catch (error) {
@@ -34,15 +34,14 @@ export async function POST(
   context: { params: Promise<{ farmId: string }> }
 ) {
   try {
-    requirePermission(request, 'payroll:write');
     const { farmId } = await context.params;
+    const auth = await requireFarmPermission(request, farmId, 'payroll:write');
     const body = await request.json();
     const input = createRunSchema.parse(body);
-    const userId = getRequestUserId(request);
 
     const data = await payrollService.createRun({
       farmId,
-      userId,
+      userId: auth.userId,
       startDate: new Date(input.startDate),
       endDate: new Date(input.endDate),
       entries: input.entries,

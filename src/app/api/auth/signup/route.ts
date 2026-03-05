@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { AppError, createErrorResponse } from '@/lib/errors';
+import { hashSessionToken } from '@/lib/session-token';
 
 export const runtime = 'nodejs';
 
@@ -51,7 +52,8 @@ export async function POST(request: Request) {
         },
       });
 
-      const sessionToken = randomBytes(32).toString('hex');
+      const rawSessionToken = randomBytes(32).toString('hex');
+      const sessionToken = hashSessionToken(rawSessionToken);
       const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
 
       await tx.session.create({
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
         },
       });
 
-      return { user, farm, sessionToken, expiresAt };
+      return { user, farm, rawSessionToken, expiresAt };
     });
 
     const response = Response.json({
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
     response.headers.append(
       'Set-Cookie',
       [
-        `session_token=${result.sessionToken}`,
+        `session_token=${result.rawSessionToken}`,
         'Path=/',
         'HttpOnly',
         'SameSite=Lax',

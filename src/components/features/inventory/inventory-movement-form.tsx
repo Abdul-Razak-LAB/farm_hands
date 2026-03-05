@@ -70,7 +70,7 @@ export function InventoryMovementForm() {
           {errors.itemId && <p className="text-destructive text-[10px] px-1">{errors.itemId.message}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Quantity</label>
             <input 

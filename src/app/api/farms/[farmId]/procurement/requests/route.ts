@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/errors';
-import { getRequestUserId, requirePermission } from '@/lib/permissions';
+import { requireFarmPermission } from '@/lib/permissions';
 import { procurementService } from '@/services/procurement/procurement-service';
 
 const requestSchema = z.object({
@@ -16,8 +16,8 @@ export async function GET(
   context: { params: Promise<{ farmId: string }> }
 ) {
   try {
-    requirePermission(request, 'procurement:read');
     const { farmId } = await context.params;
+    await requireFarmPermission(request, farmId, 'procurement:read');
     const data = await procurementService.listPurchaseRequests(farmId);
     return Response.json({ success: true, data });
   } catch (error) {
@@ -30,15 +30,14 @@ export async function POST(
   context: { params: Promise<{ farmId: string }> }
 ) {
   try {
-    requirePermission(request, 'procurement:write');
     const { farmId } = await context.params;
+    const auth = await requireFarmPermission(request, farmId, 'procurement:write');
     const body = await request.json();
     const input = requestSchema.parse(body);
-    const userId = getRequestUserId(request);
 
     const data = await procurementService.requestPurchase({
       farmId,
-      userId,
+      userId: auth.userId,
       ...input,
     });
 

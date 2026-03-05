@@ -122,7 +122,7 @@ export function MarketplaceModule() {
         <p className="text-xs text-muted-foreground uppercase font-semibold">Buy/sell produce, equipment, and agricultural services</p>
       </header>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         <div className="p-4 rounded-xl border bg-card">
           <p className="text-[10px] uppercase text-muted-foreground">Active Listings</p>
           <p className="text-2xl font-black">{summary?.activeListings ?? 0}</p>
@@ -174,7 +174,7 @@ export function MarketplaceModule() {
 
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Browse Listings</h2>
-        <div className="grid gap-2 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           {['ALL', 'PRODUCE', 'EQUIPMENT', 'SERVICE'].map((entry) => (
             <button
               key={entry}
@@ -202,7 +202,7 @@ export function MarketplaceModule() {
                 <span>{formatDate(listing.createdAt)}</span>
                 <span>Interests: {listing.interestCount || 0}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setSelectedListingId(listing.listingId)}
                   disabled={listing.status !== 'ACTIVE'}

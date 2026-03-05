@@ -35,7 +35,7 @@ export function DigestModule() {
         <p className="text-xs text-muted-foreground uppercase font-semibold">Owner exception center</p>
       </header>
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="p-4 rounded-xl border bg-card">
           <p className="text-[10px] uppercase text-muted-foreground">Events</p>
           <p className="text-2xl font-black">{digest?.totals?.events ?? 0}</p>

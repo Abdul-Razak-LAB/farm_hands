@@ -155,15 +155,15 @@ export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10 space-y-8">
       <section className="rounded-3xl border bg-card p-5 md:p-8">
-        <div className="flex items-center justify-between gap-4 border-b pb-4">
+        <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-lg font-extrabold tracking-tight">FarmOSP</p>
-          <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-muted-foreground sm:gap-3">
             <span>Features</span>
             <span>Modules</span>
             <span>Offline</span>
             <span>Support</span>
           </div>
-          <Link href="/register" className="h-10 inline-flex items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+          <Link href="/register" className="h-10 inline-flex items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground sm:w-auto">
             Get Started
           </Link>
         </div>
@@ -173,7 +173,7 @@ export default function HomePage() {
             Built for Modern Farm Teams
           </p>
 
-          <h1 className="text-4xl font-black tracking-tight md:text-7xl leading-[0.95]">
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl md:text-7xl leading-[0.95]">
             Farm operations,
             <br />
             <span
@@ -184,7 +184,7 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-2xl">
+          <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base md:text-2xl">
             Manage tasks, inventory, procurement, payroll, and verification from your phone—online or offline.
           </p>
 
@@ -221,7 +221,7 @@ export default function HomePage() {
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-bold">Quick Access</h2>
           <span className="text-xs text-muted-foreground uppercase tracking-wide">Role-aware modules</span>
         </div>

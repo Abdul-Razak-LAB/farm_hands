@@ -92,7 +92,7 @@ export function PayrollModule() {
 
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Create Payroll Run</h2>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <input
             type="date"
             value={startDate}
@@ -112,7 +112,7 @@ export function PayrollModule() {
           placeholder="Worker User ID"
           className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
         />
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <input
             type="number"
             value={grossAmount}
@@ -159,7 +159,7 @@ export function PayrollModule() {
               <p className="text-[11px] text-muted-foreground">
                 {formatDate(run.startDate)} - {formatDate(run.endDate)}
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => approveRunMutation.mutate(run.id)}
                   disabled={approveRunMutation.isPending || run.status === 'PAID'}

@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { AppError, createErrorResponse } from '@/lib/errors';
+import { hashSessionToken } from '@/lib/session-token';
 
 export const runtime = 'nodejs';
 
@@ -48,7 +49,8 @@ export async function POST(request: Request) {
       throw new AppError('NO_FARM_ACCESS', 'No farm membership found for this account.', 403);
     }
 
-    const sessionToken = randomBytes(32).toString('hex');
+    const rawSessionToken = randomBytes(32).toString('hex');
+    const sessionToken = hashSessionToken(rawSessionToken);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
 
     await prisma.session.create({
@@ -71,7 +73,7 @@ export async function POST(request: Request) {
     response.headers.append(
       'Set-Cookie',
       [
-        `session_token=${sessionToken}`,
+        `session_token=${rawSessionToken}`,
         'Path=/',
         'HttpOnly',
         'SameSite=Lax',

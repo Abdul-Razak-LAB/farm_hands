@@ -139,7 +139,7 @@ export function IncidentsModule() {
           placeholder="Resolution note"
           className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
         />
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             onClick={() => expertMutation.mutate()}
             disabled={expertMutation.isPending || !issueEventId}

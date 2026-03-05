@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/errors';
-import { getRequestUserId, requirePermission } from '@/lib/permissions';
+import { requireFarmPermission } from '@/lib/permissions';
 import { financeService } from '@/services/finance/finance-service';
 
 const createSpendRequestSchema = z.object({
@@ -16,8 +16,8 @@ export async function GET(
   context: { params: Promise<{ farmId: string }> }
 ) {
   try {
-    requirePermission(request, 'finance:read');
     const { farmId } = await context.params;
+    await requireFarmPermission(request, farmId, 'finance:read');
     const data = await financeService.listSpendRequests(farmId);
     return Response.json({ success: true, data });
   } catch (error) {
@@ -30,13 +30,12 @@ export async function POST(
   context: { params: Promise<{ farmId: string }> }
 ) {
   try {
-    requirePermission(request, 'finance:write');
     const { farmId } = await context.params;
+    const auth = await requireFarmPermission(request, farmId, 'finance:write');
     const input = createSpendRequestSchema.parse(await request.json());
-    const userId = getRequestUserId(request);
     const data = await financeService.requestExpense({
       farmId,
-      userId,
+      userId: auth.userId,
       ...input,
     });
     return Response.json({ success: true, data });

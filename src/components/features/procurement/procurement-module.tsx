@@ -3,29 +3,8 @@
 import { useAuth } from '@/components/layout/auth-provider';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-
-  return json.data as T;
-}
+import { getFarmData, postFarmData } from '@/lib/api/farm-client';
+import type { ProcurementOrder } from '@/lib/api/contracts';
 
 export function ProcurementModule() {
   const { farmId } = useAuth();
@@ -42,19 +21,16 @@ export function ProcurementModule() {
 
   const ordersQuery = useQuery({
     queryKey: ['procurement-orders', farmId],
-    queryFn: () => apiCall<any[]>(`/api/farms/${farmId}/procurement/orders`),
+    queryFn: () => getFarmData<ProcurementOrder[]>(farmId!, '/procurement/orders'),
     enabled: Boolean(farmId),
   });
 
   const requestPurchaseMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/procurement/requests`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/procurement/requests', {
         reason: requestReason,
         amount: requestAmount,
         vendorId: vendorId || undefined,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setRequestReason('');
@@ -63,13 +39,10 @@ export function ProcurementModule() {
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/procurement/orders`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/procurement/orders', {
         vendorId,
         idempotencyKey: crypto.randomUUID(),
         items: [{ description: itemDescription, qty: itemQty, unitPrice: itemPrice }],
-      }),
     }),
     onSuccess: () => {
       setItemDescription('');
@@ -80,14 +53,11 @@ export function ProcurementModule() {
   });
 
   const confirmDeliveryMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/procurement/deliveries`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/procurement/deliveries', {
         poId: deliveryPoId,
         idempotencyKey: crypto.randomUUID(),
         discrepancyNote: discrepancyNote || undefined,
         items: [{ itemId: deliveryItemId, qty: deliveryQty }],
-      }),
     }),
     onSuccess: () => {
       setDiscrepancyNote('');
@@ -205,7 +175,7 @@ export function ProcurementModule() {
       <section className="p-4 border rounded-xl bg-card">
         <h2 className="text-sm font-bold uppercase mb-3">Recent POs</h2>
         <div className="space-y-2">
-          {ordersQuery.data?.length ? ordersQuery.data.map((order: any) => (
+          {ordersQuery.data?.length ? ordersQuery.data.map((order) => (
             <div key={order.id} className="p-2 rounded-md bg-accent/20 text-xs flex flex-wrap items-center justify-between gap-2">
               <span className="font-medium">{order.id.slice(0, 10)}</span>
               <span className="uppercase text-muted-foreground">{order.status}</span>

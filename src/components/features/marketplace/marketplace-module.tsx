@@ -1,30 +1,11 @@
 'use client';
 
 import { useAuth } from '@/components/layout/auth-provider';
+import type { MarketplaceListing, MarketplacePayload, MarketplaceStakeholder } from '@/lib/api/contracts';
+import { getFarmData, postFarmData } from '@/lib/api/farm-client';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-  return json.data as T;
-}
 
 export function MarketplaceModule() {
   const { farmId } = useAuth();
@@ -43,15 +24,13 @@ export function MarketplaceModule() {
 
   const marketplaceQuery = useQuery({
     queryKey: ['marketplace', farmId],
-    queryFn: () => apiCall<any>(`/api/farms/${farmId}/marketplace`),
+    queryFn: () => getFarmData<MarketplacePayload>(farmId!, '/marketplace'),
     enabled: Boolean(farmId),
     refetchInterval: 15000,
   });
 
   const createMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/marketplace`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/marketplace', {
         action: 'CREATE_LISTING',
         title,
         description,
@@ -63,7 +42,6 @@ export function MarketplaceModule() {
         currency,
         location,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setTitle('');
@@ -76,14 +54,11 @@ export function MarketplaceModule() {
   });
 
   const interestMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/marketplace`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/marketplace', {
         action: 'EXPRESS_INTEREST',
         listingId: selectedListingId,
         message: interestMessage,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setSelectedListingId('');
@@ -93,26 +68,23 @@ export function MarketplaceModule() {
   });
 
   const closeMutation = useMutation({
-    mutationFn: (listingId: string) => apiCall(`/api/farms/${farmId}/marketplace`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: (listingId: string) => postFarmData(farmId!, '/marketplace', {
         action: 'CLOSE_LISTING',
         listingId,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       void marketplaceQuery.refetch();
     },
   });
 
-  const listings = Array.isArray(marketplaceQuery.data?.listings) ? marketplaceQuery.data.listings : [];
-  const stakeholders = Array.isArray(marketplaceQuery.data?.stakeholders) ? marketplaceQuery.data.stakeholders : [];
+  const listings: MarketplaceListing[] = Array.isArray(marketplaceQuery.data?.listings) ? marketplaceQuery.data.listings : [];
+  const stakeholders: MarketplaceStakeholder[] = Array.isArray(marketplaceQuery.data?.stakeholders) ? marketplaceQuery.data.stakeholders : [];
   const summary = marketplaceQuery.data?.summary;
 
   const filteredListings = useMemo(() => {
     if (filter === 'ALL') return listings;
-    return listings.filter((listing: any) => listing.category === filter);
+    return listings.filter((listing) => listing.category === filter);
   }, [filter, listings]);
 
   return (
@@ -186,7 +158,7 @@ export function MarketplaceModule() {
           ))}
         </div>
         <div className="space-y-2">
-          {filteredListings.length ? filteredListings.map((listing: any) => (
+          {filteredListings.length ? filteredListings.map((listing) => (
             <div key={listing.listingId} className="rounded-md bg-accent/20 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-bold">{listing.title}</span>
@@ -235,7 +207,7 @@ export function MarketplaceModule() {
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Stakeholder Directory</h2>
         <div className="space-y-2">
-          {stakeholders.length ? stakeholders.map((stakeholder: any) => (
+          {stakeholders.length ? stakeholders.map((stakeholder) => (
             <div key={`${stakeholder.type}-${stakeholder.stakeholderId}`} className="rounded-md bg-accent/20 px-3 py-2 text-xs flex items-center justify-between gap-3">
               <span className="font-semibold">{stakeholder.name}</span>
               <span className="text-muted-foreground uppercase">{stakeholder.type}</span>

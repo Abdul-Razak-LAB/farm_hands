@@ -1,30 +1,11 @@
 'use client';
 
 import { useAuth } from '@/components/layout/auth-provider';
+import type { IncidentEvent } from '@/lib/api/contracts';
+import { getFarmData, postFarmData } from '@/lib/api/farm-client';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-  return json.data as T;
-}
 
 export function IncidentsModule() {
   const { farmId } = useAuth();
@@ -36,19 +17,16 @@ export function IncidentsModule() {
 
   const timelineQuery = useQuery({
     queryKey: ['incident-timeline', farmId],
-    queryFn: () => apiCall<any[]>(`/api/farms/${farmId}/incidents`),
+    queryFn: () => getFarmData<IncidentEvent[]>(farmId!, '/incidents'),
     enabled: Boolean(farmId),
   });
 
   const reportMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/incidents`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/incidents', {
         title,
         details: details || undefined,
         severity,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setTitle('');
@@ -58,12 +36,9 @@ export function IncidentsModule() {
   });
 
   const expertMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/incidents/expert-request`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/incidents/expert-request', {
         issueEventId,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       void timelineQuery.refetch();
@@ -71,13 +46,10 @@ export function IncidentsModule() {
   });
 
   const resolveMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/incidents/resolve`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/incidents/resolve', {
         issueEventId,
         resolution,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setResolution('');
@@ -160,7 +132,7 @@ export function IncidentsModule() {
       <section className="p-4 border rounded-xl bg-card">
         <h2 className="text-sm font-bold uppercase mb-2">Issue Timeline</h2>
         <div className="space-y-2">
-          {timelineQuery.data?.length ? timelineQuery.data.map((event: any) => (
+          {timelineQuery.data?.length ? timelineQuery.data.map((event) => (
             <div key={event.id} className="p-3 rounded-md bg-accent/20">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold">{event.type}</p>

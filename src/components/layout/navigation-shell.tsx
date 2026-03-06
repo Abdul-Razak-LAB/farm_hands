@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './auth-provider';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/app/providers';
 import { db } from '@/lib/db';
 import { hasRouteAccess, ROUTE_RULES } from './route-access';
 import { 
@@ -23,60 +22,20 @@ import {
   BellAlertIcon,
   BuildingStorefrontIcon,
   Cog6ToothIcon,
+  EllipsisHorizontalCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useOutboxStore } from '@/lib/store/outbox';
 import { useIntegrationStatus } from '@/hooks/use-integration-status';
 
 export function NavigationShell({ children }: { children: React.ReactNode }) {
-  const { role, setRole, isLoading, isAuthenticated, isRegistered, logout } = useAuth();
-  const { mode, setThemeMode } = useTheme();
-  const [controlsOpen, setControlsOpen] = useState(false);
-  const [quickAction, setQuickAction] = useState('');
-  const controlsMenuRef = useRef<HTMLDivElement | null>(null);
+  const { role, isLoading, isAuthenticated, isRegistered, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const integrationStatus = useIntegrationStatus();
   const pendingCount = useOutboxStore((state) => state.pendingCount);
   const setPendingCount = useOutboxStore((state) => state.setPendingCount);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const isStandaloneRoute = pathname === '/register' || pathname === '/login';
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch {
-    }
-
-    logout();
-    setControlsOpen(false);
-    router.replace('/login');
-  };
-
-  const handleQuickAction = async (action: string) => {
-    if (!action) return;
-
-    if (action === 'theme:light') {
-      setThemeMode('light');
-      setControlsOpen(false);
-      return;
-    }
-
-    if (action === 'theme:dark') {
-      setThemeMode('dark');
-      setControlsOpen(false);
-      return;
-    }
-
-    if (action === 'role:OWNER' || action === 'role:MANAGER' || action === 'role:WORKER') {
-      const nextRole = action.replace('role:', '') as 'OWNER' | 'MANAGER' | 'WORKER';
-      setRole(nextRole);
-      setControlsOpen(false);
-      return;
-    }
-
-    if (action === 'logout') {
-      await handleLogout();
-    }
-  };
 
   useEffect(() => {
     if (isLoading) return;
@@ -120,31 +79,8 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   }, [setPendingCount]);
 
   useEffect(() => {
-    if (!controlsOpen) return;
-
-    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (controlsMenuRef.current?.contains(target)) return;
-      setControlsOpen(false);
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setControlsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown, { passive: true });
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('touchstart', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [controlsOpen]);
+    setIsMoreOpen(false);
+  }, [pathname]);
 
   const navItems = [
     { name: 'Home', href: '/', icon: HomeIcon, roles: ['OWNER', 'MANAGER', 'WORKER'] },
@@ -167,8 +103,11 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   ];
 
   const filteredNav = navItems.filter((item) => item.roles.includes(role!));
-  const activeNavItem = filteredNav.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
-
+  const mobilePrimaryHrefs = ['/setup', '/reports', '/finance', '/incidents'];
+  const mobilePrimaryNav = mobilePrimaryHrefs
+    .map((href) => filteredNav.find((item) => item.href === href))
+    .filter((item): item is (typeof filteredNav)[number] => Boolean(item));
+  const mobileMoreNav = filteredNav.filter((item) => !mobilePrimaryHrefs.includes(item.href));
   const hasRouteAccessForPath = hasRouteAccess(pathname, role, ROUTE_RULES);
   const blockingIntegrations = integrationStatus.data?.upload === false
     ? ['upload']
@@ -178,6 +117,12 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
     || pathname.startsWith('/updates')
     || pathname.startsWith('/incidents');
   const shouldShowUploadBanner = blockingIntegrations.length > 0 && isMediaRoute;
+
+  const handleLogout = () => {
+    setIsMoreOpen(false);
+    logout();
+    router.replace(isRegistered ? '/login' : '/register');
+  };
 
   if (isLoading) {
     return <div className="min-h-screen bg-background text-foreground" />;
@@ -220,52 +165,19 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="border-t p-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+          >
+            Log out
+          </button>
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-      <div ref={controlsMenuRef} className="fixed right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50">
-        <button
-          onClick={() => setControlsOpen((current) => !current)}
-          className="h-10 rounded-full border bg-background/90 backdrop-blur px-3 text-[10px] font-semibold uppercase"
-          aria-expanded={controlsOpen}
-        >
-          ☰ Controls
-        </button>
-
-      {controlsOpen ? (
-        <div className="mt-1 w-[min(92vw,320px)] rounded-xl border bg-background/95 backdrop-blur p-3 space-y-3">
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase text-muted-foreground font-semibold">Select Control</p>
-            <select
-              value={quickAction}
-              onChange={(event) => {
-                const nextAction = event.target.value;
-                setQuickAction('');
-                void handleQuickAction(nextAction);
-              }}
-              className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
-            >
-              <option value="">Choose action...</option>
-              <option value="theme:light">Light</option>
-              <option value="theme:dark">Dark</option>
-              <option value="role:OWNER">Owner</option>
-              <option value="role:MANAGER">Manager</option>
-              <option value="role:WORKER">Worker</option>
-              <option value="logout">Logout</option>
-            </select>
-            <p className="text-[10px] text-muted-foreground">
-              Current: theme {mode}, role {role}
-            </p>
-          </div>
-        </div>
-      ) : null}
-      </div>
-      <main className="flex-1 pt-16 md:pt-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
-        <div className="mx-auto w-full max-w-6xl px-4 pt-1 md:hidden">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {activeNavItem?.name || 'Workspace'}
-          </p>
-        </div>
+      <main className="flex-1 pt-16 md:pt-0 pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:pb-8">
         {shouldShowUploadBanner ? (
           <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
@@ -285,33 +197,122 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
         )}
       </main>
       
+      {/* Mobile More Drawer */}
+      {isMoreOpen ? (
+        <div className="fixed inset-x-0 bottom-[calc(5.8rem+env(safe-area-inset-bottom))] z-40 px-3 md:hidden">
+          <div className="mx-auto max-w-xl rounded-2xl border border-border/80 bg-background/95 p-3 shadow-[0_-10px_30px_rgba(2,8,23,0.18)] backdrop-blur-2xl">
+            {mobileMoreNav.length > 0 ? (
+              <>
+                <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">More</p>
+                <ul className="grid grid-cols-3 gap-2">
+                  {mobileMoreNav.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+                    return (
+                      <li key={item.name}>
+                        <Link
+                          href={item.href}
+                          onClick={() => setIsMoreOpen(false)}
+                          className={cn(
+                            'group flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition-colors',
+                            isActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+                          )}
+                        >
+                          <div className="relative grid h-7 w-7 place-items-center rounded-lg">
+                            <item.icon className="h-5 w-5" />
+                            {item.badge && item.badge > 0 ? (
+                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                                {item.badge}
+                              </span>
+                            ) : null}
+                          </div>
+                          <span className="max-w-[4.6rem] truncate text-center">{item.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className={cn(
+                'flex h-10 w-full items-center justify-center rounded-xl border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+                mobileMoreNav.length > 0 ? 'mt-3' : ''
+              )}
+            >
+              Log out
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/90 backdrop-blur-md px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background/95 to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background/95 to-transparent" />
-        <ul className="flex items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar px-1">
-          {filteredNav.map((item) => (
+      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(0.6rem+env(safe-area-inset-bottom))] md:hidden">
+        <div className="mx-auto max-w-xl rounded-[1.6rem] border border-border/80 bg-background/95 p-1.5 shadow-[0_-14px_32px_rgba(2,8,23,0.2)] backdrop-blur-2xl">
+        <ul className="flex items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar px-0.5">
+          {mobilePrimaryNav.map((item) => (
             <li key={item.name} className="shrink-0">
+              {(() => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
               <Link
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2 min-w-16 text-xs font-medium transition-colors",
-                  pathname === item.href ? "text-primary" : "text-muted-foreground"
+                  'group relative flex min-w-[4.3rem] flex-col items-center gap-1 rounded-[1.1rem] px-2 py-1.5 text-[11px] font-semibold leading-none transition-all duration-200',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-[0_6px_14px_hsl(var(--primary)/0.32)]'
+                    : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
                 )}
               >
-                <div className="relative">
-                  <item.icon className="h-6 w-6" />
+                <div
+                  className={cn(
+                    'relative grid h-8 w-8 place-items-center rounded-lg transition-all duration-200',
+                    isActive ? 'bg-primary-foreground/18' : 'group-hover:bg-accent'
+                  )}
+                >
+                  <item.icon className={cn('h-5 w-5 transition-transform duration-200', isActive ? 'stroke-[2.5] scale-105' : 'stroke-2')} />
                   {item.badge && item.badge > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
                       {item.badge}
                     </span>
                   )}
                 </div>
-                {item.name}
+                <span className="max-w-[4.6rem] truncate text-center">{item.name}</span>
+                {isActive ? <span className="h-1 w-1 rounded-full bg-primary-foreground" /> : null}
               </Link>
+                );
+              })()}
             </li>
           ))}
+          <li className="shrink-0">
+            <button
+              type="button"
+              aria-label="More options"
+              aria-expanded={isMoreOpen}
+              onClick={() => setIsMoreOpen((prev) => !prev)}
+              className={cn(
+                'group relative flex min-w-[4.3rem] flex-col items-center gap-1 rounded-[1.1rem] px-2 py-1.5 text-[11px] font-semibold leading-none transition-all duration-200',
+                isMoreOpen
+                  ? 'bg-primary text-primary-foreground shadow-[0_6px_14px_hsl(var(--primary)/0.32)]'
+                  : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
+              )}
+            >
+              <div
+                className={cn(
+                  'relative grid h-8 w-8 place-items-center rounded-lg transition-all duration-200',
+                  isMoreOpen ? 'bg-primary-foreground/18' : 'group-hover:bg-accent'
+                )}
+              >
+                <EllipsisHorizontalCircleIcon className={cn('h-5 w-5 transition-transform duration-200', isMoreOpen ? 'stroke-[2.5] scale-105' : 'stroke-2')} />
+              </div>
+              <span className="max-w-[4.6rem] truncate text-center">More</span>
+              {isMoreOpen ? <span className="h-1 w-1 rounded-full bg-primary-foreground" /> : null}
+            </button>
+          </li>
         </ul>
+        </div>
       </nav>
       </div>
     </div>

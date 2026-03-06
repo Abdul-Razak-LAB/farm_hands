@@ -2,28 +2,15 @@
 
 import { useAuth } from '@/components/layout/auth-provider';
 import { useQuery } from '@tanstack/react-query';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string): Promise<T> {
-  const response = await fetch(path);
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-  return json.data as T;
-}
+import { getFarmData } from '@/lib/api/farm-client';
+import type { ReportSummary } from '@/lib/api/contracts';
 
 export function ReportsModule() {
   const { farmId } = useAuth();
 
   const summaryQuery = useQuery({
     queryKey: ['farm-reports', farmId],
-    queryFn: () => apiCall<any>(`/api/farms/${farmId}/reports?format=json&periodDays=30`),
+    queryFn: () => getFarmData<ReportSummary>(farmId!, '/reports?format=json&periodDays=30'),
     enabled: Boolean(farmId),
   });
 

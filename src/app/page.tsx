@@ -14,8 +14,17 @@ type PendingInvite = {
   createdAt: string;
 };
 
+type FarmSummary = {
+  farmId: string;
+  name: string;
+  role: Role;
+  createdAt: string;
+};
+
 export default function HomePage() {
   const { role, farmId } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeFarmName, setActiveFarmName] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('WORKER');
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
@@ -42,6 +51,13 @@ export default function HomePage() {
   const effectiveRole: Role = (role as Role | null) || 'WORKER';
   const availableModules = modules.filter((module) => module.roles.includes(effectiveRole));
   const canManageInvites = effectiveRole === 'OWNER' || effectiveRole === 'MANAGER';
+  const navLinks = [
+    { label: 'Features', href: '#quick-access' },
+    { label: 'Support', href: '#start-today' },
+    { label: 'Owner', href: '#quick-access' },
+    { label: 'Manager', href: '#quick-access' },
+    { label: 'Worker', href: '#quick-access' },
+  ];
 
   const inviteHeaders = useMemo(() => {
     return {
@@ -83,6 +99,56 @@ export default function HomePage() {
   useEffect(() => {
     void loadInvites();
   }, [farmId, canManageInvites, inviteHeaders]);
+
+  useEffect(() => {
+    if (!farmId) {
+      setActiveFarmName(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadFarmName = async () => {
+      try {
+        const response = await fetch('/api/farms', { cache: 'no-store' });
+        const result = (await response.json()) as { success: boolean; data?: FarmSummary[] };
+        if (!result.success || !result.data) return;
+
+        const selected = result.data.find((farm) => farm.farmId === farmId);
+        if (!cancelled) {
+          setActiveFarmName(selected?.name || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setActiveFarmName(null);
+        }
+      }
+    };
+
+    void loadFarmName();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [farmId]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileMenuOpen]);
 
   const submitInvite = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -155,20 +221,75 @@ export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10 space-y-8">
       <section className="rounded-3xl border bg-card p-5 md:p-8">
-        <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-lg font-extrabold tracking-tight">FarmOSP</p>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-muted-foreground sm:gap-3">
-            <span>Features</span>
-            <span>Modules</span>
-            <span>Offline</span>
-            <span>Support</span>
+        <div className="rounded-2xl border bg-background/95 px-3 py-3 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3">
+            <Link href="/" className="text-lg font-extrabold tracking-tight">FarmOps</Link>
+
+            <nav className="hidden items-center gap-5 md:flex">
+              {navLinks.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="hidden items-center gap-2 md:flex">
+              <Link href="/register" className="h-10 inline-flex items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground">
+                Get Started
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-2 md:hidden">
+              <Link href="/register" className="h-9 inline-flex items-center justify-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
+                Get Started
+              </Link>
+              <button
+                type="button"
+                aria-label="Toggle menu"
+                aria-expanded={mobileMenuOpen}
+                onClick={() => setMobileMenuOpen((current) => !current)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border"
+              >
+                {mobileMenuOpen ? (
+                  <span className="text-lg leading-none">x</span>
+                ) : (
+                  <span className="inline-flex flex-col items-center justify-center gap-1">
+                    <span className="block h-0.5 w-4 bg-foreground" />
+                    <span className="block h-0.5 w-4 bg-foreground" />
+                    <span className="block h-0.5 w-4 bg-foreground" />
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-          <Link href="/register" className="h-10 inline-flex items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground sm:w-auto">
-            Get Started
-          </Link>
+
+          {mobileMenuOpen ? (
+            <div className="mt-3 grid gap-2 border-t pt-3 md:hidden">
+              {navLinks.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-md border bg-card px-3 py-2 text-sm font-semibold"
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              <div className="pt-1">
+                <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="h-10 inline-flex w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          ) : null}
         </div>
 
-        <div className="mx-auto max-w-4xl py-10 md:py-16 text-center space-y-5">
+        <div className="mx-auto max-w-4xl py-8 md:py-14 text-center space-y-5">
           <p className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Built for Modern Farm Teams
           </p>
@@ -206,7 +327,7 @@ export default function HomePage() {
           <div className="mx-auto grid w-full max-w-3xl gap-2 pt-4 sm:grid-cols-3">
             <div className="rounded-lg border bg-background px-3 py-2 text-left">
               <p className="text-[11px] text-muted-foreground uppercase">Active Farm</p>
-              <p className="text-sm font-semibold">{farmId || 'Not selected'}</p>
+              <p className="text-sm font-semibold">{activeFarmName || farmId || 'Not selected'}</p>
             </div>
             <div className="rounded-lg border bg-background px-3 py-2 text-left">
               <p className="text-[11px] text-muted-foreground uppercase">Role</p>
@@ -220,7 +341,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section id="quick-access" className="scroll-mt-24 space-y-3">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-bold">Quick Access</h2>
           <span className="text-xs text-muted-foreground uppercase tracking-wide">Role-aware modules</span>
@@ -234,14 +355,14 @@ export default function HomePage() {
             >
               <p className="text-sm font-semibold">{module.name}</p>
               <p className="mt-1 text-xs text-muted-foreground">{module.description}</p>
-              <p className="mt-3 text-xs font-semibold text-primary">Open module →</p>
+              <p className="mt-3 text-xs font-semibold text-primary">Open module -&gt;</p>
             </Link>
           ))}
         </div>
       </section>
 
       {canManageInvites ? (
-        <section className="space-y-3 rounded-2xl border bg-card p-4">
+        <section id="team-invites" className="scroll-mt-24 space-y-3 rounded-2xl border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Team Invites</h2>
             <div className="flex items-center gap-2">
@@ -325,6 +446,24 @@ export default function HomePage() {
         <div className="rounded-2xl border bg-card p-4">
           <h3 className="text-sm font-semibold">Role-governed operations</h3>
           <p className="mt-1 text-xs text-muted-foreground">Access controls keep each role focused on authorized responsibilities.</p>
+        </div>
+      </section>
+
+      <section id="start-today" className="scroll-mt-24 rounded-3xl border bg-gradient-to-br from-primary/8 via-background to-accent/35 p-5 md:p-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Start Today</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Run your farm operations with confidence</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Launch quickly, operate offline, and keep every workflow accountable.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/register" className="h-11 inline-flex items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground">
+              Get Started
+            </Link>
+            <Link href="/login" className="h-11 inline-flex items-center justify-center rounded-md border bg-background px-5 text-sm font-semibold">
+              Sign In
+            </Link>
+          </div>
         </div>
       </section>
     </div>

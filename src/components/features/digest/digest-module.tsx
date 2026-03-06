@@ -2,27 +2,14 @@
 
 import { useAuth } from '@/components/layout/auth-provider';
 import { useQuery } from '@tanstack/react-query';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string): Promise<T> {
-  const response = await fetch(path);
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-  return json.data as T;
-}
+import { getFarmData } from '@/lib/api/farm-client';
+import type { WeeklyDigest } from '@/lib/api/contracts';
 
 export function DigestModule() {
   const { farmId } = useAuth();
   const digestQuery = useQuery({
     queryKey: ['weekly-digest', farmId],
-    queryFn: () => apiCall<any>(`/api/farms/${farmId}/weekly-digest`),
+    queryFn: () => getFarmData<WeeklyDigest>(farmId!, '/weekly-digest'),
     enabled: Boolean(farmId),
   });
 

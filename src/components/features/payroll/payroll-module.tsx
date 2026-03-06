@@ -4,29 +4,8 @@ import { useAuth } from '@/components/layout/auth-provider';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { formatDate } from '@/lib/utils';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-
-  return json.data as T;
-}
+import { getFarmData, postFarmData } from '@/lib/api/farm-client';
+import type { PayrollRun } from '@/lib/api/contracts';
 
 export function PayrollModule() {
   const { farmId } = useAuth();
@@ -39,19 +18,16 @@ export function PayrollModule() {
 
   const runsQuery = useQuery({
     queryKey: ['payroll-runs', farmId],
-    queryFn: () => apiCall<any[]>(`/api/farms/${farmId}/payroll/runs`),
+    queryFn: () => getFarmData<PayrollRun[]>(farmId!, '/payroll/runs'),
     enabled: Boolean(farmId),
   });
 
   const createRunMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/payroll/runs`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/payroll/runs', {
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
         idempotencyKey: crypto.randomUUID(),
         entries: [{ userId: workerId, grossAmount, netAmount }],
-      }),
     }),
     onSuccess: () => {
       void runsQuery.refetch();
@@ -59,11 +35,8 @@ export function PayrollModule() {
   });
 
   const approveRunMutation = useMutation({
-    mutationFn: (runId: string) => apiCall(`/api/farms/${farmId}/payroll/runs/${runId}/approve`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: (runId: string) => postFarmData(farmId!, `/payroll/runs/${runId}/approve`, {
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       void runsQuery.refetch();
@@ -71,12 +44,9 @@ export function PayrollModule() {
   });
 
   const payRunMutation = useMutation({
-    mutationFn: (runId: string) => apiCall(`/api/farms/${farmId}/payroll/runs/${runId}/pay`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: (runId: string) => postFarmData(farmId!, `/payroll/runs/${runId}/pay`, {
         idempotencyKey: crypto.randomUUID(),
         reference: paymentRef || `PAY-${Date.now()}`,
-      }),
     }),
     onSuccess: () => {
       void runsQuery.refetch();
@@ -150,7 +120,7 @@ export function PayrollModule() {
       <section className="p-4 border rounded-xl bg-card">
         <h2 className="text-sm font-bold uppercase mb-3">Recent Runs</h2>
         <div className="space-y-3">
-          {runsQuery.data?.length ? runsQuery.data.map((run: any) => (
+          {runsQuery.data?.length ? runsQuery.data.map((run) => (
             <div key={run.id} className="p-3 rounded-md bg-accent/20 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold">{run.id.slice(0, 12)}</span>

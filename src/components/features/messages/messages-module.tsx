@@ -1,31 +1,12 @@
 'use client';
 
 import { useAuth } from '@/components/layout/auth-provider';
+import type { MessageAttachment, MessageRecord } from '@/lib/api/contracts';
+import { getFarmData, postFarmData } from '@/lib/api/farm-client';
 import { uploadFileWithSignedEndpoint } from '@/lib/media-upload-client';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-  return json.data as T;
-}
 
 export function MessagesModule() {
   const { farmId } = useAuth();
@@ -33,24 +14,21 @@ export function MessagesModule() {
   const [threadId, setThreadId] = useState('general');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [attachments, setAttachments] = useState<Array<{ fileUrl: string; fileName: string; contentType: string; size: number }>>([]);
+  const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
 
   const messagesQuery = useQuery({
     queryKey: ['messages', farmId],
-    queryFn: () => apiCall<any[]>(`/api/farms/${farmId}/messages?limit=100`),
+    queryFn: () => getFarmData<MessageRecord[]>(farmId!, '/messages?limit=100'),
     enabled: Boolean(farmId),
     refetchInterval: 10_000,
   });
 
   const sendMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/messages', {
         threadId,
         text,
         attachments,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setText('');
@@ -122,7 +100,7 @@ export function MessagesModule() {
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Recent Messages</h2>
         <div className="space-y-2">
-          {messagesQuery.data?.length ? messagesQuery.data.map((message: any) => (
+          {messagesQuery.data?.length ? messagesQuery.data.map((message) => (
             <div key={message.id} className="rounded-md bg-accent/20 px-3 py-2 text-sm">
               <p className="font-medium">{message.payload?.text || ''}</p>
               <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
@@ -132,7 +110,7 @@ export function MessagesModule() {
               </div>
               {Array.isArray(message.payload?.attachments) && message.payload.attachments.length ? (
                 <div className="mt-2 space-y-1">
-                  {message.payload.attachments.map((attachment: any) => (
+                  {message.payload.attachments.map((attachment) => (
                     <a
                       key={`${message.id}-${attachment.fileUrl}`}
                       href={attachment.fileUrl}

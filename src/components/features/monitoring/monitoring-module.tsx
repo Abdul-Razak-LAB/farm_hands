@@ -1,31 +1,11 @@
 'use client';
 
 import { useAuth } from '@/components/layout/auth-provider';
+import { getFarmData, postFarmData } from '@/lib/api/farm-client';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-};
-
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-  const json = (await response.json()) as ApiEnvelope<T>;
-  if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-  return json.data as T;
-}
 
 export function MonitoringModule() {
   const { farmId } = useAuth();
@@ -48,7 +28,7 @@ export function MonitoringModule() {
 
   const dashboardQuery = useQuery({
     queryKey: ['monitoring-dashboard', farmId],
-    queryFn: () => apiCall<any>(`/api/farms/${farmId}/monitoring`),
+    queryFn: () => getFarmData<any>(farmId!, '/monitoring'),
     enabled: Boolean(farmId),
     refetchInterval: 15_000,
     refetchIntervalInBackground: true,
@@ -56,13 +36,10 @@ export function MonitoringModule() {
   });
 
   const triggerMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/monitoring`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/monitoring', {
         level,
         message,
         idempotencyKey: crypto.randomUUID(),
-      }),
     }),
     onSuccess: () => {
       setMessage('');
@@ -71,9 +48,8 @@ export function MonitoringModule() {
   });
 
   const resolveMutation = useMutation({
-    mutationFn: (alertId: string) => apiCall(`/api/farms/${farmId}/monitoring/alerts/${alertId}/resolve`, {
-      method: 'POST',
-      body: JSON.stringify({ idempotencyKey: crypto.randomUUID() }),
+    mutationFn: (alertId: string) => postFarmData(farmId!, `/monitoring/alerts/${alertId}/resolve`, {
+      idempotencyKey: crypto.randomUUID(),
     }),
     onSuccess: () => {
       void dashboardQuery.refetch();
@@ -82,14 +58,12 @@ export function MonitoringModule() {
 
   const vraQuery = useQuery({
     queryKey: ['monitoring-vra', farmId],
-    queryFn: () => apiCall<any>(`/api/farms/${farmId}/monitoring/vra`),
+    queryFn: () => getFarmData<any>(farmId!, '/monitoring/vra'),
     enabled: Boolean(farmId),
   });
 
   const runVraMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/monitoring/vra`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/monitoring/vra', {
         idempotencyKey: crypto.randomUUID(),
         zones: [
           { zoneId: 'z1', name: 'North Ridge', hectares: 12, productivityIndex: 0.34 },
@@ -107,7 +81,6 @@ export function MonitoringModule() {
           pestPressure,
           maxYieldPotentialTonsPerHa: 6.2,
         },
-      }),
     }),
     onSuccess: () => {
       void vraQuery.refetch();
@@ -115,16 +88,13 @@ export function MonitoringModule() {
   });
 
   const feedbackMutation = useMutation({
-    mutationFn: () => apiCall(`/api/farms/${farmId}/monitoring/vra/feedback`, {
-      method: 'POST',
-      body: JSON.stringify({
+    mutationFn: () => postFarmData(farmId!, '/monitoring/vra/feedback', {
         idempotencyKey: crypto.randomUUID(),
         outcomes: [{
           zoneId: feedbackZoneId,
           recommendedYieldPerHa: recommendedYield,
           actualYieldPerHa: actualYield,
         }],
-      }),
     }),
     onSuccess: () => {
       void vraQuery.refetch();

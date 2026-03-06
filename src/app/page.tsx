@@ -238,14 +238,20 @@ export default function HomePage() {
             </nav>
 
             <div className="hidden items-center gap-2 md:flex">
+              <Link href="/login" className="h-10 inline-flex items-center justify-center rounded-md border bg-background px-5 text-sm font-semibold">
+                Sign in
+              </Link>
               <Link href="/register" className="h-10 inline-flex items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground">
-                Get Started
+                Register
               </Link>
             </div>
 
             <div className="flex items-center gap-2 md:hidden">
+              <Link href="/login" className="h-9 inline-flex items-center justify-center rounded-md border bg-background px-3 text-xs font-semibold">
+                Sign in
+              </Link>
               <Link href="/register" className="h-9 inline-flex items-center justify-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
-                Get Started
+                Register
               </Link>
               <button
                 type="button"
@@ -281,9 +287,14 @@ export default function HomePage() {
               ))}
 
               <div className="pt-1">
-                <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="h-10 inline-flex w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
-                  Get Started
-                </Link>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="h-10 inline-flex w-full items-center justify-center rounded-md border bg-background text-sm font-semibold">
+                    Sign in
+                  </Link>
+                  <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="h-10 inline-flex w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+                    Register
+                  </Link>
+                </div>
               </div>
             </div>
           ) : null}
@@ -365,17 +376,7 @@ export default function HomePage() {
         <section id="team-invites" className="scroll-mt-24 space-y-3 rounded-2xl border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">Team Invites</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Owner/Manager</span>
-              <button
-                type="button"
-                onClick={() => void loadInvites()}
-                disabled={isLoadingInvites}
-                className="h-8 rounded-md border px-3 text-xs font-semibold disabled:opacity-60"
-              >
-                {isLoadingInvites ? 'Retrying...' : 'Retry'}
-              </button>
-            </div>
+            <span className="text-xs text-muted-foreground uppercase tracking-wide">Owner/Manager</span>
           </div>
 
           <form className="grid gap-2 md:grid-cols-[1fr_160px_auto]" onSubmit={submitInvite}>

@@ -3,9 +3,33 @@
 import { useAuth } from '@/components/layout/auth-provider';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOfflineAction } from '@/hooks/use-offline-sync';
 import { useWebPush } from '@/hooks/use-web-push';
+
+type SpeechRecognitionResultItem = {
+  isFinal: boolean;
+  0: { transcript: string };
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultItem>;
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -37,8 +61,81 @@ export default function UpdatesPage() {
   const [inputMode, setInputMode] = useState<'VOICE' | 'FORM'>('VOICE');
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [summary, setSummary] = useState('');
   const [blockers, setBlockers] = useState('');
+  const [voiceError, setVoiceError] = useState('');
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+
+  const SpeechRecognitionCtor =
+    typeof window !== 'undefined'
+      ? ((window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).SpeechRecognition
+        || (window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition)
+      : undefined;
+
+  const supportsSpeechRecognition = Boolean(SpeechRecognitionCtor);
+
+  const stopVoiceCapture = () => {
+    recognitionRef.current?.stop();
+  };
+
+  const startVoiceCapture = () => {
+    setVoiceError('');
+    setInterimTranscript('');
+
+    if (!SpeechRecognitionCtor) {
+      setVoiceError('Speech recognition is unavailable in this browser. Use Short Form input.');
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      setInterimTranscript('');
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = () => {
+      setVoiceError('Could not capture voice input. Please check microphone permission.');
+    };
+
+    recognition.onresult = (event) => {
+      let finalChunk = '';
+      let interimChunk = '';
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript ?? '';
+        if (result.isFinal) {
+          finalChunk += transcript;
+        } else {
+          interimChunk += transcript;
+        }
+      }
+
+      if (finalChunk) {
+        setVoiceTranscript((current) => `${current}${finalChunk}`.trim());
+      }
+      setInterimTranscript(interimChunk);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   const updatesQuery = useQuery({
     queryKey: ['daily-updates', farmId],
@@ -129,17 +226,31 @@ export default function UpdatesPage() {
         {inputMode === 'VOICE' ? (
           <div className="space-y-2">
             <button
-              onClick={() => setIsRecording((current) => !current)}
-              className={`w-full h-10 rounded-md text-sm font-semibold ${isRecording ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground'}`}
+              onClick={() => {
+                if (isRecording) {
+                  stopVoiceCapture();
+                  return;
+                }
+                startVoiceCapture();
+              }}
+              className={`w-full h-10 rounded-md text-sm font-semibold ${isRecording ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground'} disabled:opacity-50`}
+              disabled={!supportsSpeechRecognition && !isRecording}
             >
               {isRecording ? 'Stop Recording' : 'Start Recording'}
             </button>
+            {!supportsSpeechRecognition ? (
+              <p className="text-[11px] text-muted-foreground">Voice capture is unavailable. Use Short Form mode.</p>
+            ) : null}
+            {voiceError ? <p className="text-[11px] text-destructive">{voiceError}</p> : null}
             <textarea
               value={voiceTranscript}
               onChange={(event) => setVoiceTranscript(event.target.value)}
               placeholder="Voice transcript will appear here (editable fallback)"
               className="w-full min-h-[100px] rounded-md bg-accent/40 px-3 py-2 text-sm"
             />
+            {isRecording && interimTranscript ? (
+              <p className="text-[11px] text-muted-foreground">Listening: {interimTranscript}</p>
+            ) : null}
           </div>
         ) : (
           <textarea

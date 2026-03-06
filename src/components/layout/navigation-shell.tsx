@@ -23,6 +23,7 @@ import {
   BuildingStorefrontIcon,
   Cog6ToothIcon,
   EllipsisHorizontalCircleIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import { useOutboxStore } from '@/lib/store/outbox';
 import { useIntegrationStatus } from '@/hooks/use-integration-status';
@@ -166,8 +167,9 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
+            <ArrowRightOnRectangleIcon className="h-4 w-4" />
             Log out
           </button>
         </div>
@@ -235,10 +237,11 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={handleLogout}
               className={cn(
-                'flex h-10 w-full items-center justify-center rounded-xl border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+                'flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
                 mobileMoreNav.length > 0 ? 'mt-3' : ''
               )}
             >
+              <ArrowRightOnRectangleIcon className="h-4 w-4" />
               Log out
             </button>
           </div>

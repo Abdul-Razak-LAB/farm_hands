@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/layout/auth-provider';
+import { useQuery } from '@tanstack/react-query';
+import { getFarmData } from '@/lib/api/farm-client';
 
 type Role = 'OWNER' | 'MANAGER' | 'WORKER';
 
@@ -19,6 +21,17 @@ type FarmSummary = {
   name: string;
   role: Role;
   createdAt: string;
+};
+
+type MonitoringWeatherPayload = {
+  fieldStateAnalytics?: {
+    generatedAt?: string;
+    weatherForecast?: {
+      riskLevel?: string;
+      next24hRainProbabilityPct?: number;
+      windKph?: number;
+    };
+  };
 };
 
 export default function HomePage() {
@@ -66,6 +79,16 @@ export default function HomePage() {
       ...(farmId ? { 'x-user-id': `farm-user-${farmId.slice(0, 8)}` } : {}),
     };
   }, [farmId, role]);
+
+  const weatherQuery = useQuery({
+    queryKey: ['home-weather', farmId],
+    queryFn: () => getFarmData<MonitoringWeatherPayload>(farmId!, '/monitoring'),
+    enabled: Boolean(farmId),
+    staleTime: 1000 * 60 * 30,
+    refetchInterval: 1000 * 60 * 60,
+  });
+
+  const weatherForecast = weatherQuery.data?.fieldStateAnalytics?.weatherForecast;
 
   const loadInvites = async () => {
     if (!canManageInvites || !farmId) {
@@ -335,7 +358,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="mx-auto grid w-full max-w-3xl gap-2 pt-4 sm:grid-cols-3">
+          <div className="mx-auto grid w-full max-w-4xl gap-2 pt-4 sm:grid-cols-4">
             <div className="rounded-lg border bg-background px-3 py-2 text-left">
               <p className="text-[11px] text-muted-foreground uppercase">Active Farm</p>
               <p className="text-sm font-semibold">{activeFarmName || farmId || 'Not selected'}</p>
@@ -347,6 +370,21 @@ export default function HomePage() {
             <div className="rounded-lg border bg-background px-3 py-2 text-left">
               <p className="text-[11px] text-muted-foreground uppercase">Sync</p>
               <p className="text-sm font-semibold">Foreground + Retry</p>
+            </div>
+            <div className="rounded-lg border bg-background px-3 py-2 text-left">
+              <p className="text-[11px] text-muted-foreground uppercase">Daily Weather</p>
+              {weatherQuery.isLoading ? (
+                <p className="text-sm font-semibold">Loading...</p>
+              ) : weatherForecast ? (
+                <p className="text-sm font-semibold">
+                  {String(weatherForecast.riskLevel || 'UNKNOWN')} · Rain {Number(weatherForecast.next24hRainProbabilityPct || 0)}%
+                </p>
+              ) : (
+                <p className="text-sm font-semibold">No forecast data</p>
+              )}
+              {weatherForecast?.windKph !== undefined ? (
+                <p className="text-[11px] text-muted-foreground">Wind {Number(weatherForecast.windKph)} kph</p>
+              ) : null}
             </div>
           </div>
         </div>

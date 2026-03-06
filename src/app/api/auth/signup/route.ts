@@ -11,6 +11,7 @@ const signupSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   password: z.string().min(8),
+  role: z.enum(['OWNER', 'MANAGER', 'WORKER']).default('OWNER'),
 });
 
 function hashPassword(password: string) {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
         data: {
           farmId: farm.id,
           userId: user.id,
-          role: 'OWNER',
+          role: input.role,
         },
       });
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
       data: {
         userId: result.user.id,
         farmId: result.farm.id,
-        role: 'OWNER' as const,
+        role: input.role,
         phone: input.phone || null,
       },
     });

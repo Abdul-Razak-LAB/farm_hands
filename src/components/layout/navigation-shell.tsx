@@ -52,9 +52,6 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (isAuthenticated && isStandaloneRoute) {
-      router.replace('/');
-    }
   }, [isAuthenticated, isLoading, isRegistered, isStandaloneRoute, pathname, router]);
 
   useEffect(() => {

@@ -7,6 +7,8 @@ export class IncidentService {
     title: string;
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     details?: string;
+    evidenceImageUrl?: string;
+    evidenceImageName?: string;
     idempotencyKey: string;
   }) {
     const existing = await prisma.event.findUnique({
@@ -30,6 +32,8 @@ export class IncidentService {
           title: input.title,
           severity: input.severity,
           details: input.details,
+          evidenceImageUrl: input.evidenceImageUrl,
+          evidenceImageName: input.evidenceImageName,
         },
         idempotencyKey: input.idempotencyKey,
         userId: input.userId,

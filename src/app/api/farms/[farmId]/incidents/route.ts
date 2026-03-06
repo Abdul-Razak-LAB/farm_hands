@@ -8,6 +8,8 @@ const reportSchema = z.object({
   title: z.string().min(3),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
   details: z.string().optional(),
+  evidenceImageUrl: z.string().min(1).optional(),
+  evidenceImageName: z.string().optional(),
   idempotencyKey: z.string().min(8),
 });
 

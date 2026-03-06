@@ -6,14 +6,25 @@ import { getFarmData, postFarmData } from '@/lib/api/farm-client';
 import { formatDate } from '@/lib/utils';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { uploadFileWithSignedEndpoint } from '@/lib/media-upload-client';
+import { useIntegrationStatus } from '@/hooks/use-integration-status';
+import { CameraIcon } from '@heroicons/react/24/outline';
 
 export function IncidentsModule() {
   const { farmId } = useAuth();
+  const integrationStatus = useIntegrationStatus();
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
   const [severity, setSeverity] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'>('MEDIUM');
+  const [evidenceImageUrl, setEvidenceImageUrl] = useState('');
+  const [evidenceImageName, setEvidenceImageName] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [issueEventId, setIssueEventId] = useState('');
   const [resolution, setResolution] = useState('');
+
+  const uploadAvailable = integrationStatus.data?.upload !== false;
 
   const timelineQuery = useQuery({
     queryKey: ['incident-timeline', farmId],
@@ -26,14 +37,45 @@ export function IncidentsModule() {
         title,
         details: details || undefined,
         severity,
+        evidenceImageUrl: evidenceImageUrl || undefined,
+        evidenceImageName: evidenceImageName || undefined,
         idempotencyKey: crypto.randomUUID(),
     }),
     onSuccess: () => {
       setTitle('');
       setDetails('');
+      setEvidenceImageUrl('');
+      setEvidenceImageName('');
+      setUploadProgress(0);
+      setUploadError(null);
       void timelineQuery.refetch();
     },
   });
+
+  const handleEvidenceUpload = async (file: File) => {
+    if (!farmId) return;
+
+    if (!uploadAvailable) {
+      setUploadError('Image upload is currently unavailable.');
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploadingEvidence(true);
+    setUploadProgress(0);
+
+    try {
+      const fileUrl = await uploadFileWithSignedEndpoint(`/api/farms/${farmId}/media/signed-upload`, file, setUploadProgress);
+      setEvidenceImageUrl(fileUrl);
+      setEvidenceImageName(file.name);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Unable to upload evidence image.');
+      setEvidenceImageUrl('');
+      setEvidenceImageName('');
+    } finally {
+      setIsUploadingEvidence(false);
+    }
+  };
 
   const expertMutation = useMutation({
     mutationFn: () => postFarmData(farmId!, '/incidents/expert-request', {
@@ -88,9 +130,41 @@ export function IncidentsModule() {
           placeholder="Details"
           className="w-full min-h-[80px] rounded-md bg-accent/40 px-3 py-2 text-sm"
         />
+        <input
+          id="incident-evidence-image"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          disabled={!uploadAvailable || isUploadingEvidence}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              void handleEvidenceUpload(file);
+            }
+            event.target.value = '';
+          }}
+          className="sr-only"
+        />
+        <label
+          htmlFor="incident-evidence-image"
+          className={`w-full h-10 rounded-md border bg-accent/40 px-3 text-sm inline-flex items-center justify-center gap-2 ${!uploadAvailable || isUploadingEvidence ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:bg-accent/60'}`}
+        >
+          <CameraIcon className="h-4 w-4" />
+          Choose file / Capture image
+        </label>
+        {uploadError ? (
+          <p className="text-[11px] text-destructive">{uploadError}</p>
+        ) : null}
+        <p className="text-[11px] text-muted-foreground">
+          {isUploadingEvidence
+            ? `Uploading evidence ${uploadProgress}%`
+            : evidenceImageUrl
+              ? `Evidence attached: ${evidenceImageName || 'image'}`
+              : 'No evidence image attached'}
+        </p>
         <button
           onClick={() => reportMutation.mutate()}
-          disabled={reportMutation.isPending || title.trim().length < 3}
+          disabled={reportMutation.isPending || isUploadingEvidence || title.trim().length < 3}
           className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
         >
           {reportMutation.isPending ? 'Reporting...' : 'Report Incident'}
@@ -139,6 +213,16 @@ export function IncidentsModule() {
                 <p className="text-[10px] text-muted-foreground">{formatDate(event.createdAt)}</p>
               </div>
               <p className="text-[11px] mt-1 text-muted-foreground">{JSON.stringify(event.payload)}</p>
+              {typeof (event.payload as { evidenceImageUrl?: unknown } | undefined)?.evidenceImageUrl === 'string' ? (
+                <a
+                  href={(event.payload as { evidenceImageUrl: string }).evidenceImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex text-[11px] font-semibold text-primary underline underline-offset-4"
+                >
+                  View Evidence
+                </a>
+              ) : null}
             </div>
           )) : <p className="text-xs text-muted-foreground">No incident events yet.</p>}
         </div>

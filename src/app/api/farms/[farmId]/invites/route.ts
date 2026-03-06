@@ -40,6 +40,36 @@ function inviteEmailHtml(params: { inviteLink: string; farmName: string; role: '
   `;
 }
 
+async function ensureSingleRoleAvailability(farmId: string, role: 'OWNER' | 'MANAGER' | 'WORKER', targetEmail: string) {
+  if (role === 'WORKER') {
+    return;
+  }
+
+  const activeMember = await prisma.farmMembership.findFirst({
+    where: { farmId, role },
+    select: { id: true },
+  });
+
+  if (activeMember) {
+    throw new AppError('ROLE_ALREADY_ASSIGNED', `${role} role is already assigned for this farm.`, 409);
+  }
+
+  const pendingInvite = await invitationRepo.findMany({
+    where: {
+      farmId,
+      role,
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    select: { email: true },
+  });
+
+  const hasDifferentPending = pendingInvite.some((invite) => String(invite.email).toLowerCase() !== targetEmail);
+  if (hasDifferentPending) {
+    throw new AppError('ROLE_INVITE_PENDING', `${role} invite is already pending for this farm.`, 409);
+  }
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ farmId: string }> }
@@ -107,6 +137,8 @@ export async function POST(
     if (userWithMembership?.memberships.length) {
       throw new AppError('ALREADY_MEMBER', 'This email already has access to this farm.', 409);
     }
+
+    await ensureSingleRoleAvailability(farmId, input.role, email);
 
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);

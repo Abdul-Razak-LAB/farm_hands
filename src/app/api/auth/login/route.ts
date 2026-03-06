@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
+  role: z.enum(['OWNER', 'MANAGER', 'WORKER']),
 });
 
 function verifyPassword(password: string, storedHash: string) {
@@ -33,10 +34,7 @@ export async function POST(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        memberships: {
-          orderBy: { id: 'asc' },
-          take: 1,
-        },
+        memberships: true,
       },
     });
 
@@ -44,9 +42,9 @@ export async function POST(request: Request) {
       throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password.', 401);
     }
 
-    const membership = user.memberships[0];
+    const membership = user.memberships.find((entry) => entry.role === input.role);
     if (!membership) {
-      throw new AppError('NO_FARM_ACCESS', 'No farm membership found for this account.', 403);
+      throw new AppError('ROLE_ACCESS_DENIED', `This account does not have ${input.role} access.`, 403);
     }
 
     const rawSessionToken = randomBytes(32).toString('hex');

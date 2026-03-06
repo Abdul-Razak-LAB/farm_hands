@@ -11,6 +11,7 @@ export default function LoginPage() {
   const { setFarmId, setRole, setRegistered } = useAuth();
 
   const [email, setEmail] = useState(params.get('email') || '');
+  const [role, setSignInRole] = useState<'OWNER' | 'MANAGER' | 'WORKER'>('WORKER');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +37,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           email: email.trim(),
           password,
+          role,
         }),
       });
 
@@ -84,6 +86,21 @@ export default function LoginPage() {
               onChange={(event) => setEmail(event.target.value)}
               className="h-11 w-full rounded-md border bg-background px-3 text-sm"
             />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="role" className="text-sm font-semibold">Role</label>
+            <select
+              id="role"
+              name="role"
+              value={role}
+              onChange={(event) => setSignInRole(event.target.value as 'OWNER' | 'MANAGER' | 'WORKER')}
+              className="h-11 w-full rounded-md border bg-background px-3 text-sm"
+            >
+              <option value="OWNER">Owner</option>
+              <option value="MANAGER">Manager</option>
+              <option value="WORKER">Worker</option>
+            </select>
           </div>
 
           <div className="space-y-1">

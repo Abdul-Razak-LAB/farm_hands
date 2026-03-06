@@ -19,7 +19,6 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setSignupRole] = useState<'OWNER' | 'MANAGER' | 'WORKER'>('OWNER');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +97,7 @@ export default function RegisterPage() {
           fullName: fullName.trim(),
           email: email.trim(),
           phone: phone.trim() || undefined,
-          role,
+          role: 'OWNER',
           password,
         }),
       });
@@ -187,19 +186,8 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="role" className="text-sm font-semibold">Role</label>
-            <select
-              id="role"
-              name="role"
-              value={role}
-              onChange={(event) => setSignupRole(event.target.value as 'OWNER' | 'MANAGER' | 'WORKER')}
-              className="h-11 w-full rounded-md border bg-background px-3 text-sm"
-            >
-              <option value="OWNER">Owner</option>
-              <option value="MANAGER">Manager</option>
-              <option value="WORKER">Worker</option>
-            </select>
+          <div className="rounded-md border bg-accent/20 px-3 py-2 text-xs text-muted-foreground">
+            Farm registration creates the farm owner account. Managers and workers join through invite links from the farm team.
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

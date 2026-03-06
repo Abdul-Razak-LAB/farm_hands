@@ -11,7 +11,7 @@ const signupSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   password: z.string().min(8),
-  role: z.enum(['OWNER', 'MANAGER', 'WORKER']).default('OWNER'),
+  role: z.enum(['OWNER', 'MANAGER', 'WORKER']).optional().default('OWNER'),
 });
 
 function hashPassword(password: string) {
@@ -24,6 +24,10 @@ export async function POST(request: Request) {
   try {
     const input = signupSchema.parse(await request.json());
     const email = input.email.toLowerCase();
+
+    if (input.role !== 'OWNER') {
+      throw new AppError('ROLE_REQUIRES_INVITE', 'Managers and workers must join an existing farm via invite.', 400);
+    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -49,7 +53,7 @@ export async function POST(request: Request) {
         data: {
           farmId: farm.id,
           userId: user.id,
-          role: input.role,
+          role: 'OWNER',
         },
       });
 
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
       data: {
         userId: result.user.id,
         farmId: result.farm.id,
-        role: input.role,
+        role: 'OWNER' as const,
         phone: input.phone || null,
       },
     });

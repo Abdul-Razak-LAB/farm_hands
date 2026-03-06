@@ -90,6 +90,20 @@ export async function POST(
         throw new AppError('EMAIL_IN_USE', 'An account with this email already exists.', 409);
       }
 
+      if (invitation.role === 'OWNER' || invitation.role === 'MANAGER') {
+        const existingRoleHolder = await tx.farmMembership.findFirst({
+          where: {
+            farmId: invitation.farmId,
+            role: invitation.role,
+          },
+          select: { id: true },
+        });
+
+        if (existingRoleHolder) {
+          throw new AppError('ROLE_ALREADY_ASSIGNED', `${invitation.role} role is already assigned for this farm.`, 409);
+        }
+      }
+
       const user = await tx.user.create({
         data: {
           email: invitation.email,

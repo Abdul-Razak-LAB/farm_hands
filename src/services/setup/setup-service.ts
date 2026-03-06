@@ -195,6 +195,31 @@ export class SetupService {
       throw new AppError('MEMBERSHIP_NOT_FOUND', 'Membership not found for this farm', 404);
     }
 
+    if (membership.role !== input.role && (input.role === 'OWNER' || input.role === 'MANAGER')) {
+      const existingRoleHolder = await prisma.farmMembership.findFirst({
+        where: {
+          farmId,
+          role: input.role,
+          id: { not: membership.id },
+        },
+        select: { id: true },
+      });
+
+      if (existingRoleHolder) {
+        throw new AppError('ROLE_ALREADY_ASSIGNED', `${input.role} role is already assigned for this farm`, 409);
+      }
+    }
+
+    if (membership.role === 'OWNER' && input.role !== 'OWNER') {
+      const ownerCount = await prisma.farmMembership.count({
+        where: { farmId, role: 'OWNER' },
+      });
+
+      if (ownerCount <= 1) {
+        throw new AppError('OWNER_REQUIRED', 'Each farm must always have one owner.', 400);
+      }
+    }
+
     const updated = await prisma.farmMembership.update({
       where: { id: membership.id },
       data: { role: input.role },

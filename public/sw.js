@@ -1,7 +1,6 @@
-// Basic Service Worker for App Shell Caching
-const CACHE_NAME = 'farmops-v2';
+// Basic Service Worker with conservative runtime caching.
+const CACHE_NAME = 'farmops-v3';
 const ASSETS_TO_CACHE = [
-  '/',
   '/manifest.json',
 ];
 
@@ -31,8 +30,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate strategy for UI assets
-  if (event.request.mode === 'navigate' || event.request.destination === 'script' || event.request.destination === 'style') {
+  // Always prefer network for document navigations so fresh deploys appear immediately.
+  if (event.request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const networkResponse = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, networkResponse.clone());
+        return networkResponse;
+      } catch (error) {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return fetch('/');
+      }
+    })());
+    return;
+  }
+
+  // Stale-while-revalidate for static assets.
+  if (event.request.destination === 'script' || event.request.destination === 'style') {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         const fetchPromise = fetch(event.request).then((networkResponse) => {

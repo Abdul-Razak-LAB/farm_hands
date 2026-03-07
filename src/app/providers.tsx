@@ -95,7 +95,11 @@ export function Providers({ children }: { children: ReactNode }) {
       }
 
       try {
-        await navigator.serviceWorker.register('/sw.js');
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          updateViaCache: 'none',
+        });
+
+        await registration.update();
       } catch (error) {
         captureAppException(error instanceof Error ? error : new Error('Failed to register service worker'), {
           tags: { scope: 'service-worker.register' },

@@ -198,7 +198,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       
       {/* Mobile More Drawer */}
       {isMoreOpen ? (
-        <div className="fixed inset-x-0 bottom-[calc(5.8rem+env(safe-area-inset-bottom))] z-40 px-3 md:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(5.8rem+env(safe-area-inset-bottom))] z-40 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] md:hidden">
           <div className="mx-auto max-w-xl rounded-2xl border border-border/80 bg-background/95 p-3 shadow-[0_-10px_30px_rgba(2,8,23,0.18)] backdrop-blur-2xl">
             {mobileMoreNav.length > 0 ? (
               <>
@@ -249,18 +249,21 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(0.6rem+env(safe-area-inset-bottom))] md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[calc(0.6rem+env(safe-area-inset-bottom))] md:hidden">
         <div className="mx-auto max-w-xl rounded-[1.6rem] border border-border/80 bg-background/95 p-1.5 shadow-[0_-14px_32px_rgba(2,8,23,0.2)] backdrop-blur-2xl">
-        <ul className="flex items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar px-0.5">
+        <ul
+          className="grid items-center gap-1 px-0.5"
+          style={{ gridTemplateColumns: `repeat(${mobilePrimaryNav.length + 1}, minmax(0, 1fr))` }}
+        >
           {mobilePrimaryNav.map((item) => (
-            <li key={item.name} className="shrink-0">
+            <li key={item.name} className="min-w-0">
               {(() => {
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
               <Link
                 href={item.href}
                 className={cn(
-                  'group relative flex min-w-[4.3rem] flex-col items-center gap-1 rounded-[1.1rem] px-2 py-1.5 text-[11px] font-semibold leading-none transition-all duration-200',
+                  'group relative flex w-full flex-col items-center gap-1 rounded-[1.1rem] px-2 py-1.5 text-[11px] font-semibold leading-none transition-all duration-200',
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-[0_6px_14px_hsl(var(--primary)/0.32)]'
                     : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
@@ -286,14 +289,14 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
               })()}
             </li>
           ))}
-          <li className="shrink-0">
+          <li className="min-w-0">
             <button
               type="button"
               aria-label="More options"
               aria-expanded={isMoreOpen}
               onClick={() => setIsMoreOpen((prev) => !prev)}
               className={cn(
-                'group relative flex min-w-[4.3rem] flex-col items-center gap-1 rounded-[1.1rem] px-2 py-1.5 text-[11px] font-semibold leading-none transition-all duration-200',
+                'group relative flex w-full flex-col items-center gap-1 rounded-[1.1rem] px-2 py-1.5 text-[11px] font-semibold leading-none transition-all duration-200',
                 isMoreOpen
                   ? 'bg-primary text-primary-foreground shadow-[0_6px_14px_hsl(var(--primary)/0.32)]'
                   : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'

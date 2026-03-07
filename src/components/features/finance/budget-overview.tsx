@@ -53,7 +53,7 @@ export function BudgetOverview() {
                                 <div
                                     className={cn(
                                         "h-full transition-all duration-1000",
-                                        percent > 90 ? "bg-destructive" : percent > 70 ? "bg-amber-500" : "bg-primary"
+                                        percent > 90 ? "bg-destructive" : percent > 70 ? "bg-secondary" : "bg-primary"
                                     )}
                                     style={{ width: `${Math.min(percent, 100)}%` }}
                                 />

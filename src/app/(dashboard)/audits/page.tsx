@@ -45,7 +45,7 @@ export default function AuditsPage() {
         <div>
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Next Scheduled</p>
           <p className="text-sm font-black">Post-Harvest Reconciliation</p>
-          <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">In 4 Days</p>
+          <p className="text-[10px] text-primary font-bold uppercase tracking-widest">In 4 Days</p>
         </div>
       </section>
 
@@ -54,14 +54,14 @@ export default function AuditsPage() {
         <input
           value={scheduleName}
           onChange={(event) => setScheduleName(event.target.value)}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
           placeholder="Audit name"
         />
         <input
           type="date"
           value={scheduleDate}
           onChange={(event) => setScheduleDate(event.target.value)}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <button
           onClick={addScheduleDiscrepancy}
@@ -88,3 +88,4 @@ export default function AuditsPage() {
     </div>
   );
 }
+

@@ -87,6 +87,11 @@ export function MarketplaceModule() {
     return listings.filter((listing) => listing.category === filter);
   }, [filter, listings]);
 
+  const fieldClass = 'h-10 rounded-md border border-input px-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary';
+  const selectClass = 'h-10 rounded-md border border-input px-3 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary';
+  const textareaClass = 'w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary';
+  const primaryButtonClass = 'h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold shadow-sm transition-all hover:brightness-105 disabled:opacity-50';
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto w-full space-y-6 pb-24 md:pb-8">
       <header>
@@ -116,30 +121,30 @@ export function MarketplaceModule() {
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Create Listing</h2>
         <div className="grid gap-2 md:grid-cols-2">
-          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Listing title" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-          <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
+          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Listing title" className={fieldClass} />
+          <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className={fieldClass} />
         </div>
-        <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Describe produce, equipment, or service" className="w-full min-h-[90px] rounded-md bg-accent/40 px-3 py-2 text-sm" />
+        <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Describe produce, equipment, or service" className={`${textareaClass} min-h-[90px]`} />
         <div className="grid gap-2 md:grid-cols-4">
-          <select value={category} onChange={(event) => setCategory(event.target.value as 'PRODUCE' | 'EQUIPMENT' | 'SERVICE')} className="h-10 rounded-md bg-accent/40 px-3 text-sm">
+          <select value={category} onChange={(event) => setCategory(event.target.value as 'PRODUCE' | 'EQUIPMENT' | 'SERVICE')} className={selectClass}>
             <option value="PRODUCE">PRODUCE</option>
             <option value="EQUIPMENT">EQUIPMENT</option>
             <option value="SERVICE">SERVICE</option>
           </select>
-          <select value={direction} onChange={(event) => setDirection(event.target.value as 'SELL' | 'BUY' | 'RENT' | 'SERVICE')} className="h-10 rounded-md bg-accent/40 px-3 text-sm">
+          <select value={direction} onChange={(event) => setDirection(event.target.value as 'SELL' | 'BUY' | 'RENT' | 'SERVICE')} className={selectClass}>
             <option value="SELL">SELL</option>
             <option value="BUY">BUY</option>
             <option value="RENT">RENT</option>
             <option value="SERVICE">SERVICE</option>
           </select>
-          <input value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="Quantity" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-          <input value={unit} onChange={(event) => setUnit(event.target.value)} placeholder="Unit" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
+          <input value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="Quantity" className={fieldClass} />
+          <input value={unit} onChange={(event) => setUnit(event.target.value)} placeholder="Unit" className={fieldClass} />
         </div>
         <div className="grid gap-2 md:grid-cols-2">
-          <input value={price} onChange={(event) => setPrice(event.target.value)} placeholder="Price" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-          <input value={currency} onChange={(event) => setCurrency(event.target.value)} placeholder="Currency" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
+          <input value={price} onChange={(event) => setPrice(event.target.value)} placeholder="Price" className={fieldClass} />
+          <input value={currency} onChange={(event) => setCurrency(event.target.value)} placeholder="Currency" className={fieldClass} />
         </div>
-        <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || title.trim().length < 3} className="h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+        <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || title.trim().length < 3} className={primaryButtonClass}>
           {createMutation.isPending ? 'Posting...' : 'Post Listing'}
         </button>
       </section>
@@ -151,7 +156,7 @@ export function MarketplaceModule() {
             <button
               key={entry}
               onClick={() => setFilter(entry as 'ALL' | 'PRODUCE' | 'EQUIPMENT' | 'SERVICE')}
-              className={`h-9 rounded-md text-xs font-semibold ${filter === entry ? 'bg-primary text-primary-foreground' : 'bg-accent/30 text-muted-foreground'}`}
+              className={`h-9 rounded-md border px-2 text-xs font-semibold transition-colors ${filter === entry ? 'border-primary bg-primary text-primary-foreground' : 'border-input text-muted-foreground hover:text-foreground'}`}
             >
               {entry}
             </button>
@@ -159,7 +164,7 @@ export function MarketplaceModule() {
         </div>
         <div className="space-y-2">
           {filteredListings.length ? filteredListings.map((listing) => (
-            <div key={listing.listingId} className="rounded-md bg-accent/20 p-3 space-y-2">
+            <div key={listing.listingId} className="rounded-md border bg-background/60 p-3 space-y-2 shadow-sm">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-bold">{listing.title}</span>
                 <span className="uppercase text-muted-foreground">{listing.status}</span>
@@ -197,9 +202,9 @@ export function MarketplaceModule() {
 
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Send Interest</h2>
-        <input value={selectedListingId} onChange={(event) => setSelectedListingId(event.target.value)} placeholder="Listing ID" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-        <textarea value={interestMessage} onChange={(event) => setInterestMessage(event.target.value)} placeholder="Message to buyer/seller/supplier" className="w-full min-h-[80px] rounded-md bg-accent/40 px-3 py-2 text-sm" />
-        <button onClick={() => interestMutation.mutate()} disabled={interestMutation.isPending || selectedListingId.trim().length < 8 || interestMessage.trim().length < 2} className="h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+        <input value={selectedListingId} onChange={(event) => setSelectedListingId(event.target.value)} placeholder="Listing ID" className={fieldClass} />
+        <textarea value={interestMessage} onChange={(event) => setInterestMessage(event.target.value)} placeholder="Message to buyer/seller/supplier" className={`${textareaClass} min-h-[80px]`} />
+        <button onClick={() => interestMutation.mutate()} disabled={interestMutation.isPending || selectedListingId.trim().length < 8 || interestMessage.trim().length < 2} className={primaryButtonClass}>
           {interestMutation.isPending ? 'Sending...' : 'Submit Interest'}
         </button>
       </section>
@@ -218,3 +223,4 @@ export function MarketplaceModule() {
     </div>
   );
 }
+

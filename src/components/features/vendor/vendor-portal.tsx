@@ -104,7 +104,7 @@ export function VendorPortal() {
                 <div className="bg-card rounded-3xl p-6 md:p-8 shadow-xl border space-y-6">
                     <div className="space-y-4">
                         <h2 className="font-bold text-lg">Order Confirmation</h2>
-                        <div className="bg-accent/40 p-4 rounded-xl border flex justify-between items-center text-sm">
+                        <div className="p-4 rounded-xl border flex justify-between items-center text-sm">
                             <span className="font-medium text-muted-foreground">PO ID:</span>
                             <span className="font-black text-primary text-base">{poId || 'Select order'}</span>
                         </div>
@@ -143,7 +143,7 @@ export function VendorPortal() {
                         <input
                             value={invoiceRef}
                             onChange={(event) => setInvoiceRef(event.target.value)}
-                            className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+                            className="w-full h-10 rounded-md px-3 text-sm"
                             placeholder="Invoice number"
                         />
                         <input
@@ -154,7 +154,7 @@ export function VendorPortal() {
                                 const file = event.target.files?.[0];
                                 if (file) void handleEvidenceUpload(file);
                             }}
-                            className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm disabled:opacity-50"
+                            className="w-full h-10 rounded-md px-3 text-sm disabled:opacity-50"
                         />
                         <div className="aspect-video border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 text-muted-foreground transition-colors ring-offset-4 focus-within:ring-2 ring-primary">
                             <DocumentArrowUpIcon className="h-10 w-10" />
@@ -171,3 +171,4 @@ export function VendorPortal() {
         </div>
     );
 }
+

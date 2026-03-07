@@ -84,13 +84,13 @@ export default function VendorPage() {
           value={poId}
           onChange={(event) => setPoId(event.target.value)}
           placeholder="PO ID"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           value={invoiceNumber}
           onChange={(event) => setInvoiceNumber(event.target.value)}
           placeholder="Invoice Number"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           type="file"
@@ -99,7 +99,7 @@ export default function VendorPage() {
             const file = event.target.files?.[0];
             if (file) void handleEvidenceUpload(file);
           }}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <p className="text-[11px] text-muted-foreground">{isUploadingEvidence ? `Uploading evidence ${uploadProgress}%` : evidenceUrl ? 'Evidence uploaded' : 'Evidence optional'}</p>
         <button
@@ -132,3 +132,4 @@ export default function VendorPage() {
     </div>
   );
 }
+

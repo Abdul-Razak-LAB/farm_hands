@@ -53,7 +53,7 @@ export function SpendRequestForm({ onSuccess }: { onSuccess?: () => void }) {
         <label className="text-xs font-semibold text-muted-foreground uppercase">Category</label>
         <select 
           {...register('category')}
-          className="w-full bg-accent/50 border-none rounded-md px-3 py-2 text-sm focus:ring-2 ring-primary"
+          className="w-full border-none rounded-md px-3 py-2 text-sm focus:ring-2 ring-primary"
         >
           <option value="FUEL">Fuel</option>
           <option value="FERTILIZER">Fertilizer</option>
@@ -70,7 +70,7 @@ export function SpendRequestForm({ onSuccess }: { onSuccess?: () => void }) {
           type="number"
           step="0.01"
           {...register('amount', { valueAsNumber: true })}
-          className="w-full bg-accent/50 border-none rounded-md px-3 py-2 text-sm focus:ring-2 ring-primary"
+          className="w-full border-none rounded-md px-3 py-2 text-sm focus:ring-2 ring-primary"
         />
         {errors.amount && <p className="text-destructive text-[10px]">{errors.amount.message}</p>}
       </div>
@@ -79,7 +79,7 @@ export function SpendRequestForm({ onSuccess }: { onSuccess?: () => void }) {
         <label className="text-xs font-semibold text-muted-foreground uppercase">Description</label>
         <textarea 
           {...register('description')}
-          className="w-full bg-accent/50 border-none rounded-md px-3 py-2 text-sm min-h-[80px]"
+          className="w-full border-none rounded-md px-3 py-2 text-sm min-h-[80px]"
           placeholder="What is this for?"
         />
         {errors.description && <p className="text-destructive text-[10px]">{errors.description.message}</p>}
@@ -95,3 +95,4 @@ export function SpendRequestForm({ onSuccess }: { onSuccess?: () => void }) {
     </form>
   );
 }
+

@@ -246,7 +246,7 @@ export default function UpdatesPage() {
               value={voiceTranscript}
               onChange={(event) => setVoiceTranscript(event.target.value)}
               placeholder="Voice transcript will appear here (editable fallback)"
-              className="w-full min-h-[100px] rounded-md bg-accent/40 px-3 py-2 text-sm"
+              className="w-full min-h-[100px] rounded-md px-3 py-2 text-sm"
             />
             {isRecording && interimTranscript ? (
               <p className="text-[11px] text-muted-foreground">Listening: {interimTranscript}</p>
@@ -257,14 +257,14 @@ export default function UpdatesPage() {
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
             placeholder="What was completed today?"
-            className="w-full min-h-[100px] rounded-md bg-accent/40 px-3 py-2 text-sm"
+            className="w-full min-h-[100px] rounded-md px-3 py-2 text-sm"
           />
         )}
         <input
           value={blockers}
           onChange={(event) => setBlockers(event.target.value)}
           placeholder="Blockers (optional)"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <button
           onClick={() => createMutation.mutate()}
@@ -290,3 +290,4 @@ export default function UpdatesPage() {
     </div>
   );
 }
+

@@ -79,14 +79,14 @@ export function ProcurementModule() {
           value={requestReason}
           onChange={(event) => setRequestReason(event.target.value)}
           placeholder="Reason"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           type="number"
           value={requestAmount}
           onChange={(event) => setRequestAmount(Number(event.target.value))}
           placeholder="Amount"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <button
           onClick={() => requestPurchaseMutation.mutate()}
@@ -103,13 +103,13 @@ export function ProcurementModule() {
           value={vendorId}
           onChange={(event) => setVendorId(event.target.value)}
           placeholder="Vendor ID"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           value={itemDescription}
           onChange={(event) => setItemDescription(event.target.value)}
           placeholder="Item description"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <input
@@ -117,14 +117,14 @@ export function ProcurementModule() {
             value={itemQty}
             onChange={(event) => setItemQty(Number(event.target.value))}
             placeholder="Qty"
-            className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+            className="w-full h-10 rounded-md px-3 text-sm"
           />
           <input
             type="number"
             value={itemPrice}
             onChange={(event) => setItemPrice(Number(event.target.value))}
             placeholder="Unit price"
-            className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+            className="w-full h-10 rounded-md px-3 text-sm"
           />
         </div>
         <button
@@ -142,26 +142,26 @@ export function ProcurementModule() {
           value={deliveryPoId}
           onChange={(event) => setDeliveryPoId(event.target.value)}
           placeholder="PO ID"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           value={deliveryItemId}
           onChange={(event) => setDeliveryItemId(event.target.value)}
           placeholder="Inventory Item ID"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           type="number"
           value={deliveryQty}
           onChange={(event) => setDeliveryQty(Number(event.target.value))}
           placeholder="Delivered quantity"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           value={discrepancyNote}
           onChange={(event) => setDiscrepancyNote(event.target.value)}
           placeholder="Discrepancy note (optional)"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <button
           onClick={() => confirmDeliveryMutation.mutate()}
@@ -186,3 +186,4 @@ export function ProcurementModule() {
     </div>
   );
 }
+

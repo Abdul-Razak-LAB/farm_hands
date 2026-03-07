@@ -137,7 +137,7 @@ export function VerificationAudit() {
                   onClick={() => updateResponse(q.id, true)}
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 py-3 border-2 rounded-xl text-xs font-bold transition-all",
-                    results[q.id]?.value === true ? "bg-green-500 border-green-500 text-white" : "border-accent text-muted-foreground"
+                    results[q.id]?.value === true ? "bg-primary border-primary text-primary-foreground" : "border-accent text-muted-foreground"
                   )}
                 >
                   <CheckBadgeIcon className="h-4 w-4" /> YES
@@ -167,7 +167,7 @@ export function VerificationAudit() {
                 disabled={!uploadAvailable || uploadingQuestionId === q.id}
                 className={cn(
                   "h-10 w-10 flex items-center justify-center rounded-xl text-muted-foreground disabled:opacity-50",
-                  results[q.id]?.evidencePhotoUrl ? 'bg-primary/20 text-primary' : 'bg-accent/50'
+                  results[q.id]?.evidencePhotoUrl ? 'bg-primary/20 text-primary' : ''
                 )}
                 title="Attach Evidence Photo"
               >
@@ -201,3 +201,4 @@ export function VerificationAudit() {
     </div>
   );
 }
+

@@ -64,7 +64,7 @@ export function MessagesModule() {
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">New Message</h2>
         <div className="grid gap-2 md:grid-cols-[220px_1fr]">
-          <select value={threadId} onChange={(event) => setThreadId(event.target.value)} className="h-10 rounded-md bg-accent/40 px-3 text-sm">
+          <select value={threadId} onChange={(event) => setThreadId(event.target.value)} className="h-10 rounded-md px-3 text-sm">
             <option value="general">General</option>
             <option value="operations">Operations</option>
             <option value="alerts">Alerts</option>
@@ -74,7 +74,7 @@ export function MessagesModule() {
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Write a message"
-            className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+            className="h-10 rounded-md px-3 text-sm"
           />
         </div>
         <input
@@ -85,7 +85,7 @@ export function MessagesModule() {
             const file = event.target.files?.[0];
             if (file) void uploadAttachment(file);
           }}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm disabled:opacity-50"
+          className="w-full h-10 rounded-md px-3 text-sm disabled:opacity-50"
         />
         <p className="text-[11px] text-muted-foreground">{uploading ? `Uploading ${uploadProgress}%` : attachments.length ? `${attachments.length} attachment(s) ready` : 'No attachments selected'}</p>
         <button
@@ -130,3 +130,4 @@ export function MessagesModule() {
     </div>
   );
 }
+

@@ -84,7 +84,7 @@ export function DailyUpdate() {
                     value={summary}
                     onChange={(e) => setSummary(e.target.value)}
                     placeholder="Transcription will appear here... you can also type manually."
-                    className="w-full h-40 p-4 rounded-xl border bg-background resize-none focus:ring-2 focus:ring-primary outline-none text-sm leading-relaxed"
+                    className="w-full h-40 p-4 rounded-xl border resize-none focus:ring-2 focus:ring-primary outline-none text-sm leading-relaxed"
                 />
 
                 <button

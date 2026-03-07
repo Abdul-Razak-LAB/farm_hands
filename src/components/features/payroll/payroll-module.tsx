@@ -67,20 +67,20 @@ export function PayrollModule() {
             type="date"
             value={startDate}
             onChange={(event) => setStartDate(event.target.value)}
-            className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+            className="w-full h-10 rounded-md px-3 text-sm"
           />
           <input
             type="date"
             value={endDate}
             onChange={(event) => setEndDate(event.target.value)}
-            className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+            className="w-full h-10 rounded-md px-3 text-sm"
           />
         </div>
         <input
           value={workerId}
           onChange={(event) => setWorkerId(event.target.value)}
           placeholder="Worker User ID"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <input
@@ -88,14 +88,14 @@ export function PayrollModule() {
             value={grossAmount}
             onChange={(event) => setGrossAmount(Number(event.target.value))}
             placeholder="Gross"
-            className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+            className="w-full h-10 rounded-md px-3 text-sm"
           />
           <input
             type="number"
             value={netAmount}
             onChange={(event) => setNetAmount(Number(event.target.value))}
             placeholder="Net"
-            className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+            className="w-full h-10 rounded-md px-3 text-sm"
           />
         </div>
         <button
@@ -113,7 +113,7 @@ export function PayrollModule() {
           value={paymentRef}
           onChange={(event) => setPaymentRef(event.target.value)}
           placeholder="Optional payment reference"
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
       </section>
 
@@ -152,3 +152,4 @@ export function PayrollModule() {
     </div>
   );
 }
+

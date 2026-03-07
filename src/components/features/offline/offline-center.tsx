@@ -71,9 +71,9 @@ export function OfflineCenter() {
                             <div key={job.id} className="flex items-center gap-4 p-4 rounded-xl border bg-card text-sm">
                                 <div className={cn(
                                     "h-8 w-8 rounded-full flex items-center justify-center",
-                                    job.status === 'COMPLETED' ? "bg-green-100 text-green-600" :
-                                        job.status === 'FAILED' ? "bg-red-100 text-red-600" :
-                                            "bg-blue-100 text-blue-600"
+                                    job.status === 'COMPLETED' ? "bg-primary/15 text-primary" :
+                                        job.status === 'FAILED' ? "bg-destructive/15 text-destructive" :
+                                            "bg-accent text-accent-foreground"
                                 )}>
                                     {job.status === 'COMPLETED' ? <CheckCircleIcon className="h-5 w-5" /> :
                                         job.status === 'FAILED' ? <ExclamationCircleIcon className="h-5 w-5" /> :

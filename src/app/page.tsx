@@ -340,7 +340,7 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base md:text-2xl">
-            Manage tasks, inventory, procurement, payroll, and verification from your phone—online or offline.
+            Manage tasks, inventory, procurement, payroll, and verification from your phone online or offline.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -400,7 +400,7 @@ export default function HomePage() {
             <Link
               key={module.name}
               href={module.href}
-              className="group rounded-2xl border bg-card p-4 transition-colors hover:bg-accent/40"
+              className="group rounded-2xl border bg-card p-4 transition-colors"
             >
               <p className="text-sm font-semibold">{module.name}</p>
               <p className="mt-1 text-xs text-muted-foreground">{module.description}</p>

@@ -3,53 +3,88 @@
 
 :root {
   --background: 210 36% 96%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --foreground: 145 25% 14%;
+  --card: 0 0% 100% / 0.58;
+  --card-foreground: 145 25% 14%;
+  --popover: 0 0% 100% / 0.7;
+  --popover-foreground: 145 25% 14%;
+  --primary: 135 52% 33%;
+  --primary-foreground: 60 33% 97%;
+  --secondary: 78 31% 90%;
+  --secondary-foreground: 132 35% 20%;
+  --muted: 84 24% 92%;
+  --muted-foreground: 140 13% 38%;
+  --accent: 92 33% 86%;
+  --accent-foreground: 132 34% 22%;
+  --destructive: 16 72% 44%;
+  --destructive-foreground: 48 100% 97%;
+  --border: 95 20% 84%;
+  --input: 95 20% 84%;
+  --ring: 135 52% 33%;
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
+  --background: 140 20% 10%;
+  --foreground: 70 22% 94%;
+  --card: 140 18% 12% / 0.62;
+  --card-foreground: 70 22% 94%;
+  --popover: 140 18% 12% / 0.72;
+  --popover-foreground: 70 22% 94%;
+  --primary: 125 45% 56%;
+  --primary-foreground: 138 26% 12%;
+  --secondary: 132 18% 20%;
+  --secondary-foreground: 70 22% 94%;
+  --muted: 132 16% 19%;
+  --muted-foreground: 95 12% 68%;
+  --accent: 128 18% 24%;
+  --accent-foreground: 70 22% 94%;
+  --destructive: 15 65% 42%;
+  --destructive-foreground: 48 100% 96%;
+  --border: 130 14% 24%;
+  --input: 130 14% 24%;
+  --ring: 125 45% 56%;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+
+  /* Global control polish for a cleaner, consistent UI across modules. */
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    @apply rounded-md border border-input bg-background text-foreground shadow-sm transition-colors duration-150;
+    @apply placeholder:text-muted-foreground/70;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary;
+  }
+
+  select {
+    @apply cursor-pointer;
+  }
+
+  button {
+    @apply transition-colors duration-150;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25;
+  }
+
+  /* Normalize primary action buttons across screens. */
+  button[class~='bg-primary'] {
+    @apply rounded-md font-semibold text-primary-foreground shadow-sm;
+  }
+
+  button[class~='bg-primary']:not([class*='h-']) {
+    @apply h-10;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
   html,
   body {
     min-height: 100%;
@@ -57,6 +92,27 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(60rem 40rem at -10% -10%, hsl(var(--primary) / 0.12), transparent 60%),
+      radial-gradient(50rem 35rem at 110% 10%, hsl(var(--accent) / 0.18), transparent 58%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background)) 100%);
+    background-attachment: fixed;
+  }
+
+  [class~='bg-card'],
+  [class~='bg-popover'] {
+    backdrop-filter: blur(14px) saturate(135%);
+    -webkit-backdrop-filter: blur(14px) saturate(135%);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.44),
+      0 10px 30px hsl(135 22% 20% / 0.08);
+  }
+
+  .dark [class~='bg-card'],
+  .dark [class~='bg-popover'] {
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.1),
+      0 10px 30px hsl(0 0% 0% / 0.35);
   }
 }
 

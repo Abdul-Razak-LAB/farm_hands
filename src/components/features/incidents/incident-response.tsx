@@ -25,7 +25,7 @@ export function IncidentResponse() {
                             <div className="flex gap-3">
                                 <div className={cn(
                                     "h-10 w-10 rounded-full flex items-center justify-center",
-                                    incident.severity === 'URGENT' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                                    incident.severity === 'URGENT' ? "bg-destructive/15 text-destructive" : "bg-secondary text-secondary-foreground"
                                 )}>
                                     <ExclamationCircleIcon className="h-6 w-6" />
                                 </div>
@@ -36,7 +36,7 @@ export function IncidentResponse() {
                             </div>
                             <div className={cn(
                                 "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                incident.status === 'OPEN' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                                incident.status === 'OPEN' ? "bg-primary/15 text-primary" : "bg-secondary text-secondary-foreground"
                             )}>
                                 {incident.status}
                             </div>

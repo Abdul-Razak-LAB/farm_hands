@@ -100,7 +100,7 @@ export function ApprovalInbox() {
                                 <button
                                     onClick={() => handleDecision(req.id, 'APPROVED')}
                                     disabled={decisionMutation.isPending || !canDecide}
-                                    className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <CheckIcon className="h-5 w-5" />
                                     Approve

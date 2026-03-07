@@ -25,7 +25,7 @@ export function MonitoringDashboard() {
                     <div key={sensor.id} className="bg-card border rounded-2xl p-4 shadow-sm space-y-3">
                         <div className={cn(
                             "h-10 w-10 rounded-full flex items-center justify-center",
-                            sensor.status === 'CRITICAL' ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"
+                            sensor.status === 'CRITICAL' ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"
                         )}>
                             {sensor.type === 'MOISTURE' ? <BeakerIcon className="h-6 w-6" /> :
                                 sensor.type === 'LEVEL' ? <ExclamationTriangleIcon className="h-6 w-6" /> :

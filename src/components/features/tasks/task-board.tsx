@@ -49,7 +49,7 @@ export function TaskBoard() {
                         onClick={() => setFilter(f as any)}
                         className={cn(
                             "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                            filter === f ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50"
+                            filter === f ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
                         )}
                     >
                         {f}
@@ -66,7 +66,7 @@ export function TaskBoard() {
                     filteredTasks.map((task) => (
                         <div
                             key={task.id}
-                            className="group relative flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-all shadow-sm"
+                            className="group relative flex items-center gap-4 p-4 rounded-xl border bg-card transition-all shadow-sm"
                         >
                             <button
                                 onClick={() => toggleComplete(task)}
@@ -102,3 +102,4 @@ export function TaskBoard() {
         </div>
     );
 }
+

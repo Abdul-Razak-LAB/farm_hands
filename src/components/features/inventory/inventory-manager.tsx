@@ -22,9 +22,9 @@ export function InventoryManager() {
                             <div className="flex gap-3">
                                 <div className={cn(
                                     "h-10 w-10 rounded-full flex items-center justify-center",
-                                    item.category === 'FEED' ? "bg-amber-100 text-amber-600" :
-                                        item.category === 'CHEMICALS' ? "bg-purple-100 text-purple-600" :
-                                            "bg-blue-100 text-blue-600"
+                                    item.category === 'FEED' ? "bg-secondary text-secondary-foreground" :
+                                        item.category === 'CHEMICALS' ? "bg-accent text-accent-foreground" :
+                                            "bg-primary/15 text-primary"
                                 )}>
                                     {item.category === 'FEED' ? <CubeIcon className="h-6 w-6" /> :
                                         item.category === 'CHEMICALS' ? <BeakerIcon className="h-6 w-6" /> :

@@ -207,12 +207,12 @@ export function ConsultationModule() {
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
           placeholder="Topic (e.g. maize pest outbreak)"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <select
           value={urgency}
           onChange={(event) => setUrgency(event.target.value as ConsultationUrgency)}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         >
           <option value="LOW">LOW</option>
           <option value="MEDIUM">MEDIUM</option>
@@ -223,7 +223,7 @@ export function ConsultationModule() {
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Describe the problem and the support you need"
-          className="w-full min-h-[100px] rounded-md bg-accent/40 px-3 py-2 text-sm"
+          className="w-full min-h-[100px] rounded-md px-3 py-2 text-sm"
         />
         <button
           onClick={() => createMutation.mutate()}
@@ -242,7 +242,7 @@ export function ConsultationModule() {
               <button
                 key={item.consultationId}
                 onClick={() => setSelectedConsultationId(item.consultationId)}
-                className={`w-full text-left rounded-md border p-3 ${activeConsultationId === item.consultationId ? 'bg-accent/40 border-primary/30' : 'bg-background'}`}
+                className={`w-full text-left rounded-md border p-3 ${activeConsultationId === item.consultationId ? 'border-primary/30' : 'bg-background'}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-bold truncate">{item.topic}</p>
@@ -286,7 +286,7 @@ export function ConsultationModule() {
                 value={replyText}
                 onChange={(event) => setReplyText(event.target.value)}
                 placeholder="Send follow-up note"
-                className="w-full min-h-[90px] rounded-md bg-accent/40 px-3 py-2 text-sm"
+                className="w-full min-h-[90px] rounded-md px-3 py-2 text-sm"
               />
               <button
                 onClick={() => sendReplyMutation.mutate()}
@@ -301,13 +301,13 @@ export function ConsultationModule() {
                   value={assigneeName}
                   onChange={(event) => setAssigneeName(event.target.value)}
                   placeholder="Assign expert name"
-                  className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                  className="h-10 rounded-md px-3 text-sm"
                 />
                 <input
                   value={assigneeEmail}
                   onChange={(event) => setAssigneeEmail(event.target.value)}
                   placeholder="Assign expert email"
-                  className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                  className="h-10 rounded-md px-3 text-sm"
                 />
               </div>
               <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -315,7 +315,7 @@ export function ConsultationModule() {
                   value={assignmentNote}
                   onChange={(event) => setAssignmentNote(event.target.value)}
                   placeholder="Assignment note (optional)"
-                  className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                  className="h-10 rounded-md px-3 text-sm"
                 />
                 <button
                   onClick={() => assignMutation.mutate()}
@@ -331,7 +331,7 @@ export function ConsultationModule() {
                   value={statusNote}
                   onChange={(event) => setStatusNote(event.target.value)}
                   placeholder="Status note (optional)"
-                  className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                  className="h-10 rounded-md px-3 text-sm"
                 />
                 <button
                   onClick={() => updateStatusMutation.mutate('IN_PROGRESS')}
@@ -355,3 +355,4 @@ export function ConsultationModule() {
     </div>
   );
 }
+

@@ -112,12 +112,12 @@ export function IncidentsModule() {
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Issue title"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <select
           value={severity}
           onChange={(event) => setSeverity(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL')}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         >
           <option value="LOW">LOW</option>
           <option value="MEDIUM">MEDIUM</option>
@@ -128,7 +128,7 @@ export function IncidentsModule() {
           value={details}
           onChange={(event) => setDetails(event.target.value)}
           placeholder="Details"
-          className="w-full min-h-[80px] rounded-md bg-accent/40 px-3 py-2 text-sm"
+          className="w-full min-h-[80px] rounded-md px-3 py-2 text-sm"
         />
         <input
           id="incident-evidence-image"
@@ -147,7 +147,7 @@ export function IncidentsModule() {
         />
         <label
           htmlFor="incident-evidence-image"
-          className={`w-full h-10 rounded-md border bg-accent/40 px-3 text-sm inline-flex items-center justify-center gap-2 ${!uploadAvailable || isUploadingEvidence ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:bg-accent/60'}`}
+          className={`w-full h-10 rounded-md border px-3 text-sm inline-flex items-center justify-center gap-2 ${!uploadAvailable || isUploadingEvidence ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:bg-accent/60'}`}
         >
           <CameraIcon className="h-4 w-4" />
           Choose file / Capture image
@@ -177,13 +177,13 @@ export function IncidentsModule() {
           value={issueEventId}
           onChange={(event) => setIssueEventId(event.target.value)}
           placeholder="Issue Event ID"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <input
           value={resolution}
           onChange={(event) => setResolution(event.target.value)}
           placeholder="Resolution note"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
@@ -230,3 +230,4 @@ export function IncidentsModule() {
     </div>
   );
 }
+

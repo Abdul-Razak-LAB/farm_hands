@@ -205,13 +205,13 @@ export default function TaskBoard() {
         <input
           value={templateName}
           onChange={(event) => setTemplateName(event.target.value)}
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
           placeholder="Template name"
         />
         <input
           value={templateNotes}
           onChange={(event) => setTemplateNotes(event.target.value)}
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
           placeholder="Template notes (optional)"
         />
         <button
@@ -248,3 +248,4 @@ export default function TaskBoard() {
     </div>
   );
 }
+

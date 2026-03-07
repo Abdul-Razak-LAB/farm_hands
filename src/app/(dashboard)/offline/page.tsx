@@ -91,7 +91,7 @@ export default function OfflineCenter() {
 
         {outbox?.map((item) => (
           <div key={item.id} className="p-3 border rounded-lg flex items-center gap-3 bg-card shadow-sm">
-            <div className={`h-2 w-2 rounded-full ${item.status === 'FAILED' ? 'bg-destructive' : 'bg-amber-500 animate-pulse'}`} />
+            <div className={`h-2 w-2 rounded-full ${item.status === 'FAILED' ? 'bg-destructive' : 'bg-primary animate-pulse'}`} />
             <div className="flex-1">
               <div className="flex justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider">{item.action.replace('_', ' ')}</p>
@@ -123,7 +123,7 @@ export default function OfflineCenter() {
           <div>
             <dt className="text-muted-foreground">Network</dt>
             <dd className="font-bold flex items-center gap-1">
-              <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-destructive'}`} />
+              <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-primary' : 'bg-destructive'}`} />
               {isOnline ? 'ONLINE' : 'OFFLINE'}
             </dd>
           </div>

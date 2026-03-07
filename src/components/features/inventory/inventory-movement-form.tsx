@@ -60,7 +60,7 @@ export function InventoryMovementForm() {
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Item / Input</label>
           <select 
             {...register('itemId')}
-            className="w-full h-12 bg-accent/50 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
+            className="w-full h-12 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
           >
             <option value="">Select an item...</option>
             <option value="item-1">NPK Fertilizer (50kg Bag)</option>
@@ -76,7 +76,7 @@ export function InventoryMovementForm() {
             <input 
               type="number"
               {...register('quantity', { valueAsNumber: true })}
-              className="w-full h-12 bg-accent/50 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
+              className="w-full h-12 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
               placeholder="0.00"
             />
             {errors.quantity && <p className="text-destructive text-[10px] px-1">{errors.quantity.message}</p>}
@@ -86,7 +86,7 @@ export function InventoryMovementForm() {
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Lot / Batch #</label>
             <input 
               {...register('lotNumber')}
-              className="w-full h-12 bg-accent/50 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
+              className="w-full h-12 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
               placeholder="Optional"
             />
           </div>
@@ -96,7 +96,7 @@ export function InventoryMovementForm() {
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Reason / Purpose</label>
           <input 
             {...register('reason')}
-            className="w-full h-12 bg-accent/50 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
+            className="w-full h-12 border-none rounded-xl px-4 text-sm font-medium focus:ring-2 ring-primary"
             placeholder={movementType === 'OUT' ? 'Field Section #4 App' : 'Purchase Order #123'}
           />
         </div>
@@ -106,8 +106,8 @@ export function InventoryMovementForm() {
           disabled={isPending}
           className={`w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.97] mt-4 ${
             movementType === 'IN' ? 'bg-primary text-primary-foreground' : 
-            movementType === 'OUT' ? 'bg-orange-500 text-white' : 
-            'bg-zinc-800 text-white'
+            movementType === 'OUT' ? 'bg-destructive text-destructive-foreground' : 
+            'bg-secondary text-secondary-foreground'
           }`}
         >
           {isPending ? 'Logging...' : 'Confirm Movement'}
@@ -116,3 +116,4 @@ export function InventoryMovementForm() {
     </div>
   );
 }
+

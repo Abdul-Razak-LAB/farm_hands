@@ -229,7 +229,7 @@ export function SetupModule() {
             value={newFarmName}
             onChange={(event) => setNewFarmName(event.target.value)}
             placeholder="New farm name"
-            className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+            className="h-10 rounded-md px-3 text-sm"
           />
           <button
             onClick={() => {
@@ -255,7 +255,7 @@ export function SetupModule() {
                 setRole(selected.role);
               }
             }}
-            className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+            className="h-10 rounded-md px-3 text-sm"
           >
             <option value="" disabled>Select active farm</option>
             {(farmsQuery.data || []).map((farm) => (
@@ -293,12 +293,12 @@ export function SetupModule() {
         ) : (
           <>
             <div className="grid gap-2 md:grid-cols-2">
-              <input value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Farm name" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-              <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-              <input value={sizeHectares} onChange={(event) => setSizeHectares(event.target.value)} placeholder="Size (hectares)" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-              <input value={crops} onChange={(event) => setCrops(event.target.value)} placeholder="Crops (comma-separated)" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
+              <input value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Farm name" className="h-10 rounded-md px-3 text-sm" />
+              <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="h-10 rounded-md px-3 text-sm" />
+              <input value={sizeHectares} onChange={(event) => setSizeHectares(event.target.value)} placeholder="Size (hectares)" className="h-10 rounded-md px-3 text-sm" />
+              <input value={crops} onChange={(event) => setCrops(event.target.value)} placeholder="Crops (comma-separated)" className="h-10 rounded-md px-3 text-sm" />
             </div>
-            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Operational notes" className="w-full min-h-[90px] rounded-md bg-accent/40 px-3 py-2 text-sm" />
+            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Operational notes" className="w-full min-h-[90px] rounded-md px-3 py-2 text-sm" />
             <button
               onClick={() => {
                 setProfileSaveMessage('');
@@ -320,8 +320,8 @@ export function SetupModule() {
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <h2 className="text-sm font-bold uppercase">Sensor Configuration</h2>
         <div className="grid gap-2 md:grid-cols-[1fr_220px_auto]">
-          <input value={sensorName} onChange={(event) => setSensorName(event.target.value)} placeholder="Sensor name" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-          <select value={sensorType} onChange={(event) => setSensorType(event.target.value)} className="h-10 rounded-md bg-accent/40 px-3 text-sm">
+          <input value={sensorName} onChange={(event) => setSensorName(event.target.value)} placeholder="Sensor name" className="h-10 rounded-md px-3 text-sm" />
+          <select value={sensorType} onChange={(event) => setSensorType(event.target.value)} className="h-10 rounded-md px-3 text-sm">
             <option value="SOIL_MOISTURE">SOIL_MOISTURE</option>
             <option value="TEMPERATURE">TEMPERATURE</option>
             <option value="WEATHER">WEATHER</option>
@@ -395,8 +395,8 @@ export function SetupModule() {
           <label className="rounded-md bg-accent/20 px-3 py-2 text-xs flex items-center gap-2"><input type="checkbox" checked={sms} onChange={(event) => setSms(event.target.checked)} /> SMS</label>
           <label className="rounded-md bg-accent/20 px-3 py-2 text-xs flex items-center gap-2"><input type="checkbox" checked={email} onChange={(event) => setEmail(event.target.checked)} /> Email</label>
         </div>
-        <input value={smsRecipients} onChange={(event) => setSmsRecipients(event.target.value)} placeholder="SMS recipients (comma-separated phone numbers)" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
-        <input value={emailRecipients} onChange={(event) => setEmailRecipients(event.target.value)} placeholder="Email recipients (comma-separated)" className="h-10 rounded-md bg-accent/40 px-3 text-sm" />
+        <input value={smsRecipients} onChange={(event) => setSmsRecipients(event.target.value)} placeholder="SMS recipients (comma-separated phone numbers)" className="h-10 rounded-md px-3 text-sm" />
+        <input value={emailRecipients} onChange={(event) => setEmailRecipients(event.target.value)} placeholder="Email recipients (comma-separated)" className="h-10 rounded-md px-3 text-sm" />
         <button
           onClick={() => {
             setPreferencesSaveMessage('');
@@ -414,3 +414,4 @@ export function SetupModule() {
     </div>
   );
 }
+

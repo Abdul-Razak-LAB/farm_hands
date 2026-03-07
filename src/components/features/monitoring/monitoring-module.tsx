@@ -621,7 +621,7 @@ export function MonitoringModule() {
         <select
           value={level}
           onChange={(event) => setLevel(event.target.value as 'INFO' | 'WARNING' | 'CRITICAL')}
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         >
           <option value="INFO">INFO</option>
           <option value="WARNING">WARNING</option>
@@ -631,7 +631,7 @@ export function MonitoringModule() {
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           placeholder="Alert message"
-          className="w-full h-10 rounded-md bg-accent/40 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         />
         <button
           onClick={() => triggerMutation.mutate()}
@@ -672,13 +672,13 @@ export function MonitoringModule() {
             type="number"
             value={commodityPrice}
             onChange={(event) => setCommodityPrice(Number(event.target.value) || 0)}
-            className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+            className="h-10 rounded-md px-3 text-sm"
             placeholder="Commodity price"
           />
           <select
             value={weatherRisk}
             onChange={(event) => setWeatherRisk(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')}
-            className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+            className="h-10 rounded-md px-3 text-sm"
           >
             <option value="LOW">Weather: LOW</option>
             <option value="MEDIUM">Weather: MEDIUM</option>
@@ -689,7 +689,7 @@ export function MonitoringModule() {
         <select
           value={pestPressure}
           onChange={(event) => setPestPressure(event.target.value as 'LOW' | 'MEDIUM' | 'HIGH')}
-          className="h-10 rounded-md bg-accent/40 px-3 text-sm w-full"
+          className="h-10 rounded-md px-3 text-sm w-full"
         >
           <option value="LOW">Pest: LOW</option>
           <option value="MEDIUM">Pest: MEDIUM</option>
@@ -754,21 +754,21 @@ export function MonitoringModule() {
               <input
                 value={feedbackZoneId}
                 onChange={(event) => setFeedbackZoneId(event.target.value)}
-                className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                className="h-10 rounded-md px-3 text-sm"
                 placeholder="Zone ID"
               />
               <input
                 type="number"
                 value={recommendedYield}
                 onChange={(event) => setRecommendedYield(Number(event.target.value) || 0)}
-                className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                className="h-10 rounded-md px-3 text-sm"
                 placeholder="Rec. Yield"
               />
               <input
                 type="number"
                 value={actualYield}
                 onChange={(event) => setActualYield(Number(event.target.value) || 0)}
-                className="h-10 rounded-md bg-accent/40 px-3 text-sm"
+                className="h-10 rounded-md px-3 text-sm"
                 placeholder="Actual Yield"
               />
             </div>
@@ -786,3 +786,4 @@ export function MonitoringModule() {
     </div>
   );
 }
+

@@ -315,7 +315,7 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
               const file = event.target.files?.[0];
               if (file) void uploadMedia(file, 'photo');
             }}
-            className="w-full h-8 rounded bg-accent/50 px-2 text-[10px] disabled:opacity-50"
+            className="w-full h-8 rounded px-2 text-[10px] disabled:opacity-50"
           />
           <p className="text-[10px] text-muted-foreground">{isUploadingPhoto ? `Uploading ${photoProgress}%` : photoUrl ? 'Uploaded' : 'No file'}</p>
         </div>
@@ -330,7 +330,7 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
               const file = event.target.files?.[0];
               if (file) void uploadMedia(file, 'video');
             }}
-            className="w-full h-8 rounded bg-accent/50 px-2 text-[10px] disabled:opacity-50"
+            className="w-full h-8 rounded px-2 text-[10px] disabled:opacity-50"
           />
           <p className="text-[10px] text-muted-foreground">{photoOnlyMode ? 'Disabled near quota' : isUploadingVideo ? `Uploading ${videoProgress}%` : videoUrl ? 'Uploaded' : 'No file'}</p>
         </div>
@@ -360,7 +360,7 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
         value={voiceNote}
         onChange={(event) => setVoiceNote(event.target.value)}
         placeholder="Voice transcript or note (optional)"
-        className="w-full h-10 rounded-md bg-accent/50 px-3 text-xs"
+        className="w-full h-10 rounded-md px-3 text-xs"
       />
 
       <div className="rounded-md border bg-accent/20 p-3 text-[11px] text-muted-foreground space-y-1">
@@ -379,3 +379,4 @@ export function ProofCapture({ taskId, onComplete }: { taskId: string, onComplet
     </div>
   );
 }
+

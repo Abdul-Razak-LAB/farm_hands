@@ -88,7 +88,7 @@ export default function InventoryDashboard() {
         <select
           value={leakageItem}
           onChange={(event) => setLeakageItem(event.target.value)}
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
         >
           <option value="">Select item</option>
           {stocks.map((item) => (
@@ -100,13 +100,13 @@ export default function InventoryDashboard() {
           min={0}
           value={leakageQty}
           onChange={(event) => setLeakageQty(Number(event.target.value))}
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
           placeholder="Leakage quantity"
         />
         <input
           value={leakageReason}
           onChange={(event) => setLeakageReason(event.target.value)}
-          className="w-full h-10 rounded-md bg-accent/50 px-3 text-sm"
+          className="w-full h-10 rounded-md px-3 text-sm"
           placeholder="Reason (spillage, moisture damage, theft...)"
         />
         <button
@@ -132,3 +132,4 @@ export default function InventoryDashboard() {
     </div>
   );
 }
+

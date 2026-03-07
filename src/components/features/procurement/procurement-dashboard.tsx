@@ -16,7 +16,7 @@ export function ProcurementDashboard() {
                 </button>
             </div>
 
-            <div className="flex bg-accent/50 p-1 rounded-xl">
+            <div className="flex p-1 rounded-xl">
                 <button
                     onClick={() => setActiveTab('REQUESTS')}
                     className={cn(
@@ -42,7 +42,7 @@ export function ProcurementDashboard() {
                     <>
                         <div className="bg-card border rounded-2xl p-4 shadow-sm flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-primary">
                                     <InboxIcon className="h-6 w-6" />
                                 </div>
                                 <div>
@@ -50,14 +50,14 @@ export function ProcurementDashboard() {
                                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Manager Requested • Feb 18</p>
                                 </div>
                             </div>
-                            <div className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Pending</div>
+                            <div className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-[10px] font-bold uppercase">Pending</div>
                         </div>
                     </>
                 ) : (
                     <>
                         <div className="bg-card border rounded-2xl p-4 shadow-sm flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-primary">
                                     <TruckIcon className="h-6 w-6" />
                                 </div>
                                 <div>
@@ -65,7 +65,7 @@ export function ProcurementDashboard() {
                                     <p className="text-[10px] uppercase font-bold text-muted-foreground">AgroSupply Ltd • $4,200</p>
                                 </div>
                             </div>
-                            <div className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Dispatched</div>
+                            <div className="bg-primary/15 text-primary px-2 py-0.5 rounded text-[10px] font-bold uppercase">Dispatched</div>
                         </div>
                     </>
                 )}
@@ -73,3 +73,4 @@ export function ProcurementDashboard() {
         </div>
     );
 }
+

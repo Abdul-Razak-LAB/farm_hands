@@ -199,7 +199,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
       {/* Mobile More Drawer */}
       {isMoreOpen ? (
         <div className="fixed inset-x-0 bottom-[calc(5.8rem+env(safe-area-inset-bottom))] z-40 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] md:hidden">
-          <div className="mx-auto max-w-xl rounded-2xl border border-border/80 bg-background/95 p-3 shadow-[0_-10px_30px_rgba(2,8,23,0.18)] backdrop-blur-2xl">
+          <div className="mx-auto max-w-sm sm:max-w-xl rounded-2xl border border-border/80 bg-background/95 p-3 shadow-[0_-10px_30px_rgba(2,8,23,0.18)] backdrop-blur-2xl">
             {mobileMoreNav.length > 0 ? (
               <>
                 <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">More</p>
@@ -250,7 +250,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed inset-x-0 bottom-0 z-40 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[calc(0.6rem+env(safe-area-inset-bottom))] md:hidden">
-        <div className="mx-auto max-w-xl rounded-[1.6rem] border border-border/80 bg-background/95 p-1.5 shadow-[0_-14px_32px_rgba(2,8,23,0.2)] backdrop-blur-2xl">
+        <div className="mx-auto max-w-sm sm:max-w-xl rounded-[1.6rem] border border-border/80 bg-background/95 p-1.5 shadow-[0_-14px_32px_rgba(2,8,23,0.2)] backdrop-blur-2xl">
         <ul
           className="grid items-center gap-1 px-0.5"
           style={{ gridTemplateColumns: `repeat(${mobilePrimaryNav.length + 1}, minmax(0, 1fr))` }}

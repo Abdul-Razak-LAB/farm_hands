@@ -193,12 +193,12 @@ export default function UpdatesPage() {
 
       <section className="p-4 border rounded-xl bg-card space-y-3">
         <div className="rounded-md border bg-accent/20 p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold uppercase">Alerts</p>
             <button
               onClick={() => push.subscribe(farmId ?? undefined)}
-              disabled={push.isSubscribing || !push.isSupported || !push.integrationAvailable || push.isSubscribed}
-              className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50"
+              disabled={push.isSubscribing || push.isSubscribed}
+              className="h-9 w-full rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50 sm:h-8 sm:w-auto"
             >
               {push.isSubscribed ? 'Enabled' : push.isSubscribing ? 'Enabling...' : 'Enable Push'}
             </button>

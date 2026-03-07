@@ -39,17 +39,6 @@ function isEmailAvailable() {
 }
 
 export async function GET() {
-  if (process.env.NODE_ENV !== 'production') {
-    return jsonNoStore({
-      success: true,
-      data: {
-        upload: true,
-        push: true,
-        email: true,
-      },
-    });
-  }
-
   return jsonNoStore({
     success: true,
     data: {

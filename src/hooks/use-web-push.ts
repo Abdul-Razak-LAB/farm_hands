@@ -37,6 +37,29 @@ function isStandalonePwa() {
     return iosStandalone || mediaStandalone;
 }
 
+function normalizePushError(error: unknown) {
+    if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+            return 'Notification permission was denied. Enable notifications in browser settings and retry.';
+        }
+        if (error.name === 'AbortError') {
+            return 'Push setup was interrupted. Retry once network is stable.';
+        }
+        if (error.name === 'InvalidStateError') {
+            return 'Service worker is not active yet. Reload and try again.';
+        }
+        if (error.name === 'NotSupportedError') {
+            return 'Push is not supported in this browser context.';
+        }
+    }
+
+    if (error instanceof Error && error.message.trim().length > 0) {
+        return error.message;
+    }
+
+    return 'Push could not be enabled. In-app alerts will continue.';
+}
+
 export function useWebPush() {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
@@ -57,7 +80,7 @@ export function useWebPush() {
         }
 
         if (!integrationAvailable) {
-            setMessage('Push integration is currently unavailable. In-app alerts will be used.');
+            setMessage('Push integration is unavailable: configure VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY on the server, then restart the app. In-app alerts will be used.');
             reportIntegrationDegraded('push', 'Backend reported push unavailable');
             return;
         }
@@ -67,10 +90,30 @@ export function useWebPush() {
             return;
         }
 
+        if (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost') {
+            setMessage('Push requires HTTPS on this device. Open the secure app URL and retry.');
+            return;
+        }
+
         setIsSubscribing(true);
         setMessage(null);
 
         try {
+            if (typeof Notification === 'undefined') {
+                throw new Error('Notification API is unavailable in this browser.');
+            }
+
+            if (Notification.permission === 'denied') {
+                throw new Error('Notification permission is blocked for this site.');
+            }
+
+            if (Notification.permission === 'default') {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    throw new Error('Notification permission not granted.');
+                }
+            }
+
             const keyResponse = await fetch('/api/push/public-key');
             const keyJson = (await keyResponse.json()) as ApiEnvelope<PushPublicKeyResponse>;
 
@@ -78,11 +121,19 @@ export function useWebPush() {
                 throw new Error(keyJson.error?.message || 'Push key unavailable');
             }
 
-            const registration = await navigator.serviceWorker.ready;
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(keyJson.data.publicKey),
-            });
+            let registration = await navigator.serviceWorker.getRegistration();
+            if (!registration) {
+                registration = await navigator.serviceWorker.register('/sw.js');
+            }
+
+            await navigator.serviceWorker.ready;
+
+            const existingSubscription = await registration.pushManager.getSubscription();
+            const subscription = existingSubscription
+                ?? await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(keyJson.data.publicKey),
+                });
 
             const subscribeResponse = await fetch('/api/push/subscribe', {
                 method: 'POST',
@@ -101,8 +152,9 @@ export function useWebPush() {
             setIsSubscribed(true);
             setMessage('Notifications enabled.');
         } catch (error) {
-            reportIntegrationDegraded('push', error instanceof Error ? error.message : 'Push subscription failed');
-            setMessage('Push could not be enabled. In-app alerts will continue.');
+            const normalizedError = normalizePushError(error);
+            reportIntegrationDegraded('push', normalizedError);
+            setMessage(normalizedError);
         } finally {
             setIsSubscribing(false);
         }

@@ -147,12 +147,19 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                pathname === item.href ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'
+                'group flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                pathname === item.href ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
               )}
             >
-              <div className="relative">
-                <item.icon className="h-5 w-5" />
+              <div
+                className={cn(
+                  'relative grid h-8 w-8 place-items-center rounded-lg transition-all duration-200',
+                  pathname === item.href
+                    ? 'bg-primary/15 text-primary shadow-[0_6px_14px_hsl(var(--primary)/0.2)]'
+                    : 'text-muted-foreground group-hover:bg-accent group-hover:text-primary group-hover:-translate-y-0.5'
+                )}
+              >
+                <item.icon className={cn('h-5 w-5 transition-transform duration-200', pathname === item.href ? 'stroke-[2.4]' : 'stroke-2 group-hover:scale-105')} />
                 {item.badge && item.badge > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
                     {item.badge}
@@ -167,7 +174,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/20"
           >
             <ArrowRightOnRectangleIcon className="h-4 w-4" />
             Log out
@@ -204,11 +211,15 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
               <>
                 <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">More</p>
                 <ul className="grid grid-cols-3 gap-2">
-                  {mobileMoreNav.map((item) => {
+                  {mobileMoreNav.map((item, index) => {
                     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
                     return (
-                      <li key={item.name}>
+                      <li
+                        key={item.name}
+                        className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                        style={{ animationDelay: `${index * 45}ms`, animationFillMode: 'both' }}
+                      >
                         <Link
                           href={item.href}
                           onClick={() => setIsMoreOpen(false)}
@@ -217,8 +228,13 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
                             isActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
                           )}
                         >
-                          <div className="relative grid h-7 w-7 place-items-center rounded-lg">
-                            <item.icon className="h-5 w-5" />
+                          <div
+                            className={cn(
+                              'relative grid h-7 w-7 place-items-center rounded-lg transition-all duration-200',
+                              isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground group-hover:bg-accent group-hover:text-primary group-hover:-translate-y-0.5'
+                            )}
+                          >
+                            <item.icon className={cn('h-5 w-5 transition-transform duration-200', isActive ? 'stroke-[2.4]' : 'stroke-2 group-hover:scale-105')} />
                             {item.badge && item.badge > 0 ? (
                               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
                                 {item.badge}
@@ -237,7 +253,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={handleLogout}
               className={cn(
-                'flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+                'flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-destructive/35 bg-destructive/10 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/20',
                 mobileMoreNav.length > 0 ? 'mt-3' : ''
               )}
             >
@@ -272,7 +288,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
                 <div
                   className={cn(
                     'relative grid h-8 w-8 place-items-center rounded-lg transition-all duration-200',
-                    isActive ? 'bg-primary-foreground/18' : 'group-hover:bg-accent'
+                    isActive ? 'bg-primary-foreground/18' : 'group-hover:bg-accent group-hover:-translate-y-0.5'
                   )}
                 >
                   <item.icon className={cn('h-5 w-5 transition-transform duration-200', isActive ? 'stroke-[2.5] scale-105' : 'stroke-2')} />
@@ -305,7 +321,7 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
               <div
                 className={cn(
                   'relative grid h-8 w-8 place-items-center rounded-lg transition-all duration-200',
-                  isMoreOpen ? 'bg-primary-foreground/18' : 'group-hover:bg-accent'
+                  isMoreOpen ? 'bg-primary-foreground/18' : 'group-hover:bg-accent group-hover:-translate-y-0.5'
                 )}
               >
                 <EllipsisHorizontalCircleIcon className={cn('h-5 w-5 transition-transform duration-200', isMoreOpen ? 'stroke-[2.5] scale-105' : 'stroke-2')} />

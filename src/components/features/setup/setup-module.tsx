@@ -7,7 +7,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 export function SetupModule() {
-  const { farmId, setFarmId, setRole } = useAuth();
+  const { farmId, setFarmId, setRole, role } = useAuth();
   const [profileName, setProfileName] = useState('');
   const [location, setLocation] = useState('');
   const [sizeHectares, setSizeHectares] = useState('');
@@ -31,6 +31,7 @@ export function SetupModule() {
   const [farmMessage, setFarmMessage] = useState('');
   const [farmError, setFarmError] = useState('');
   const primaryActionButtonClass = 'h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50';
+  const canWriteSetup = role === 'OWNER' || role === 'MANAGER' || role === 'WORKER';
 
   type ApiEnvelope<T> = {
     success: boolean;
@@ -123,12 +124,22 @@ export function SetupModule() {
   });
 
   const sensorMutation = useMutation({
-    mutationFn: () => postFarmData(farmId!, '/setup', {
+    mutationFn: () => {
+      if (!farmId) {
+        throw new Error('No farm selected. Select a farm before adding sensors.');
+      }
+
+      if (!canWriteSetup) {
+        throw new Error('Current role cannot add sensors. Select a farm role with setup write access.');
+      }
+
+      return postFarmData(farmId, '/setup', {
         action: 'UPSERT_SENSOR',
         name: sensorName,
         type: sensorType,
         idempotencyKey: crypto.randomUUID(),
-    }),
+      });
+    },
     onSuccess: () => {
       setSensorSaveError('');
       setSensorSaveMessage('Sensor saved successfully.');
@@ -321,14 +332,27 @@ export function SetupModule() {
             onClick={() => {
               setSensorSaveMessage('');
               setSensorSaveError('');
+
+              if (!farmId) {
+                setSensorSaveError('No farm selected. Select a farm before adding sensors.');
+                return;
+              }
+
+              if (!canWriteSetup) {
+                setSensorSaveError('Current role cannot add sensors. Select a farm role with setup write access.');
+                return;
+              }
+
               sensorMutation.mutate();
             }}
-            disabled={sensorMutation.isPending || sensorName.trim().length < 2}
+            disabled={sensorMutation.isPending || sensorName.trim().length < 2 || !farmId || !canWriteSetup}
             className={primaryActionButtonClass}
           >
             {sensorMutation.isPending ? 'Saving...' : 'Add Sensor'}
           </button>
         </div>
+        {!canWriteSetup ? <p className="text-xs text-destructive">Current role cannot add sensors. Select a farm role with setup write access.</p> : null}
+        {!farmId ? <p className="text-xs text-destructive">No farm selected. Select a farm before adding sensors.</p> : null}
         {sensorSaveError ? <p className="text-xs text-destructive">{sensorSaveError}</p> : null}
         {sensorSaveMessage ? <p className="text-xs text-primary">{sensorSaveMessage}</p> : null}
         <div className="space-y-2">

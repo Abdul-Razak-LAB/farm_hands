@@ -90,6 +90,7 @@ const roleMatrix: Record<FarmRole, FarmPermission[]> = {
   ],
   WORKER: [
     'setup:read',
+    'setup:write',
     'marketplace:read',
     'marketplace:write',
     'updates:read',

@@ -474,6 +474,26 @@ export function MonitoringModule() {
             <p className="text-[11px] text-muted-foreground">
               Rain {fieldStateAnalytics?.weatherForecast?.next24hRainProbabilityPct ?? 0}% · Wind {fieldStateAnalytics?.weatherForecast?.windKph ?? 0} kph
             </p>
+            {fieldStateAnalytics?.weatherForecast?.next24hTemperatureRangeC ? (
+              <p className="text-[11px] text-muted-foreground">
+                Temp {fieldStateAnalytics.weatherForecast.next24hTemperatureRangeC.min ?? 0}-{fieldStateAnalytics.weatherForecast.next24hTemperatureRangeC.max ?? 0} C
+              </p>
+            ) : null}
+            {Array.isArray(fieldStateAnalytics?.weatherForecast?.daily) && fieldStateAnalytics.weatherForecast.daily.length ? (
+              <div className="pt-1 space-y-0.5">
+                {fieldStateAnalytics.weatherForecast.daily.slice(0, 5).map((day: any) => (
+                  <p key={day.date} className="text-[10px] text-muted-foreground">
+                    {new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date))}: {day.summary} {day.temperatureMinC}-{day.temperatureMaxC} C · Rain {day.rainProbabilityPct}%
+                  </p>
+                ))}
+              </div>
+            ) : null}
+            {fieldStateAnalytics?.weatherForecast?.location?.label ? (
+              <p className="text-[10px] text-muted-foreground">Location: {fieldStateAnalytics.weatherForecast.location.label}</p>
+            ) : null}
+            {fieldStateAnalytics?.weatherForecast?.source ? (
+              <p className="text-[10px] text-muted-foreground">Source: {fieldStateAnalytics.weatherForecast.source}</p>
+            ) : null}
           </div>
           <div className="p-3 rounded-md bg-accent/20 space-y-1">
             <p className="text-[10px] uppercase text-muted-foreground">Vegetation Indices</p>

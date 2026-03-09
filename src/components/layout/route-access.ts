@@ -13,6 +13,7 @@ export const ROUTE_RULES: RouteRule[] = [
   { prefix: '/monitoring', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/audits', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/vendor', roles: ['OWNER', 'MANAGER'] },
+  { prefix: '/farmhands', roles: ['OWNER', 'MANAGER'] },
   { prefix: '/messages', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/consultation', roles: ['OWNER', 'MANAGER', 'WORKER'] },
   { prefix: '/updates/daily', roles: ['OWNER', 'MANAGER'] },

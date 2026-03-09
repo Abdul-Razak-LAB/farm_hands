@@ -27,9 +27,25 @@ type MonitoringWeatherPayload = {
   fieldStateAnalytics?: {
     generatedAt?: string;
     weatherForecast?: {
+      source?: 'OPEN_METEO' | 'SYNTHETIC';
+      location?: {
+        label?: string;
+      } | null;
       riskLevel?: string;
       next24hRainProbabilityPct?: number;
+      next24hTemperatureRangeC?: {
+        min?: number;
+        max?: number;
+      };
       windKph?: number;
+      daily?: Array<{
+        date: string;
+        summary: string;
+        rainProbabilityPct: number;
+        windKph: number;
+        temperatureMinC: number;
+        temperatureMaxC: number;
+      }>;
     };
   };
 };
@@ -54,6 +70,7 @@ export default function HomePage() {
     { name: 'Finance', href: '/finance', roles: ['OWNER', 'MANAGER'], description: 'Spend requests, approvals, and budget visibility.' },
     { name: 'Reports', href: '/reports', roles: ['OWNER', 'MANAGER'], description: 'Performance analytics and CSV/PDF/Excel exports.' },
     { name: 'Procurement', href: '/procurement', roles: ['OWNER', 'MANAGER'], description: 'Requests, purchase orders, and delivery checks.' },
+    { name: 'FarmHands', href: '/farmhands', roles: ['OWNER', 'MANAGER'], description: 'Owner contracts, labor/worker services, and farm-input supply ordering.' },
     { name: 'Payroll', href: '/payroll', roles: ['OWNER', 'MANAGER'], description: 'Run preparation, approvals, and payout status.' },
     { name: 'Monitoring', href: '/monitoring', roles: ['OWNER', 'MANAGER'], description: 'Sensor state, alerts, and issue timeline.' },
     { name: 'Messages', href: '/messages', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'In-app collaboration with media attachments.' },
@@ -84,11 +101,12 @@ export default function HomePage() {
     queryKey: ['home-weather', farmId],
     queryFn: () => getFarmData<MonitoringWeatherPayload>(farmId!, '/monitoring'),
     enabled: Boolean(farmId),
-    staleTime: 1000 * 60 * 30,
-    refetchInterval: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 60 * 15,
   });
 
   const weatherForecast = weatherQuery.data?.fieldStateAnalytics?.weatherForecast;
+  const upcomingForecast = (weatherForecast?.daily ?? []).slice(0, 3);
 
   const loadInvites = async () => {
     if (!canManageInvites || !farmId) {
@@ -376,14 +394,31 @@ export default function HomePage() {
               {weatherQuery.isLoading ? (
                 <p className="text-sm font-semibold">Loading...</p>
               ) : weatherForecast ? (
-                <p className="text-sm font-semibold">
-                  {String(weatherForecast.riskLevel || 'UNKNOWN')} · Rain {Number(weatherForecast.next24hRainProbabilityPct || 0)}%
-                </p>
+                <>
+                  <p className="text-sm font-semibold">
+                    {String(weatherForecast.riskLevel || 'UNKNOWN')} · Rain {Number(weatherForecast.next24hRainProbabilityPct || 0)}%
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Temp {Number(weatherForecast.next24hTemperatureRangeC?.min ?? 0)}-{Number(weatherForecast.next24hTemperatureRangeC?.max ?? 0)} C
+                  </p>
+                </>
               ) : (
                 <p className="text-sm font-semibold">No forecast data</p>
               )}
               {weatherForecast?.windKph !== undefined ? (
                 <p className="text-[11px] text-muted-foreground">Wind {Number(weatherForecast.windKph)} kph</p>
+              ) : null}
+              {upcomingForecast.length ? (
+                <div className="mt-1 space-y-0.5">
+                  {upcomingForecast.map((day) => (
+                    <p key={day.date} className="text-[10px] text-muted-foreground">
+                      {new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date))}: {day.summary} {day.temperatureMinC}-{day.temperatureMaxC} C
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+              {weatherForecast?.location?.label ? (
+                <p className="text-[10px] text-muted-foreground">Location: {weatherForecast.location.label}</p>
               ) : null}
             </div>
           </div>

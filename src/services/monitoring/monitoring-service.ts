@@ -1,6 +1,42 @@
 import { prisma } from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 
+type DailyWeatherForecast = {
+  date: string;
+  summary: string;
+  riskLevel: 'STABLE' | 'MODERATE_RISK' | 'HIGH_RISK';
+  rainProbabilityPct: number;
+  windKph: number;
+  temperatureMinC: number;
+  temperatureMaxC: number;
+};
+
+type WeatherForecastPayload = {
+  source: 'OPEN_METEO' | 'SYNTHETIC';
+  location: {
+    label: string;
+    latitude: number;
+    longitude: number;
+    timezone: string;
+  } | null;
+  riskLevel: 'STABLE' | 'MODERATE_RISK' | 'HIGH_RISK';
+  next24hRainProbabilityPct: number;
+  next24hTemperatureRangeC: {
+    min: number;
+    max: number;
+  };
+  windKph: number;
+  advisory: string;
+  daily: DailyWeatherForecast[];
+};
+
+type ResolvedFarmLocation = {
+  label: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+};
+
 type VraZoneInput = {
   zoneId: string;
   name: string;
@@ -38,6 +74,278 @@ type VraFeedbackInput = {
 };
 
 export class MonitoringService {
+  private locationCache = new Map<string, { expiresAt: number; value: ResolvedFarmLocation | null }>();
+
+  private forecastCache = new Map<string, { expiresAt: number; value: WeatherForecastPayload }>();
+
+  private weatherCodeSummary(code: number) {
+    if (code === 0) return 'Clear';
+    if (code <= 3) return 'Cloudy';
+    if (code === 45 || code === 48) return 'Fog';
+    if ([51, 53, 55, 56, 57].includes(code)) return 'Drizzle';
+    if ([61, 63, 65, 66, 67].includes(code)) return 'Rain';
+    if ([71, 73, 75, 77].includes(code)) return 'Snow';
+    if ([80, 81, 82].includes(code)) return 'Showers';
+    if ([95, 96, 99].includes(code)) return 'Thunderstorm';
+    return 'Mixed';
+  }
+
+  private riskFromWeather(rainProbabilityPct: number, windKph: number, weatherCode: number): 'STABLE' | 'MODERATE_RISK' | 'HIGH_RISK' {
+    if (rainProbabilityPct >= 70 || windKph >= 35 || [95, 96, 99].includes(weatherCode)) {
+      return 'HIGH_RISK';
+    }
+
+    if (rainProbabilityPct >= 40 || windKph >= 25 || [80, 81, 82].includes(weatherCode)) {
+      return 'MODERATE_RISK';
+    }
+
+    return 'STABLE';
+  }
+
+  private buildAdvisory(riskLevel: 'STABLE' | 'MODERATE_RISK' | 'HIGH_RISK') {
+    if (riskLevel === 'HIGH_RISK') {
+      return 'Delay non-essential spraying, secure field equipment, and prioritize flood/wind-sensitive blocks.';
+    }
+
+    if (riskLevel === 'MODERATE_RISK') {
+      return 'Keep irrigation and disease-prone areas under watch, and verify critical field tasks before noon.';
+    }
+
+    return 'Proceed with normal operations while maintaining routine weather checks for schedule optimization.';
+  }
+
+  private fallbackSyntheticWeather(unresolvedAlerts: Array<{ level: string }>): WeatherForecastPayload {
+    const weatherRiskScore = this.clamp(
+      unresolvedAlerts.filter((alert) => alert.level === 'CRITICAL').length * 15
+      + unresolvedAlerts.filter((alert) => alert.level === 'WARNING').length * 6,
+      8,
+      95,
+    );
+    const weatherCondition: 'STABLE' | 'MODERATE_RISK' | 'HIGH_RISK' = weatherRiskScore > 70
+      ? 'HIGH_RISK'
+      : weatherRiskScore > 45
+        ? 'MODERATE_RISK'
+        : 'STABLE';
+
+    const todayRain = this.clamp(Math.round(weatherRiskScore * 0.9), 5, 98);
+    const todayMinTemp = this.clamp(14 + Math.round(weatherRiskScore * 0.06), 10, 26);
+    const todayMaxTemp = this.clamp(26 + Math.round(weatherRiskScore * 0.07), 23, 42);
+    const todayWind = this.clamp(8 + Math.round(weatherRiskScore * 0.22), 6, 34);
+
+    const daily = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setUTCDate(date.getUTCDate() + index);
+
+      const rain = this.clamp(todayRain + ((index % 3) - 1) * 7, 2, 98);
+      const wind = this.clamp(todayWind + ((index % 2) * 3) - 1, 4, 40);
+      const tempMin = this.clamp(todayMinTemp + ((index % 4) - 1), 8, 30);
+      const tempMax = this.clamp(todayMaxTemp + ((index % 5) - 2), 18, 44);
+      const riskLevel = this.riskFromWeather(rain, wind, rain > 65 ? 61 : 1);
+
+      return {
+        date: date.toISOString().slice(0, 10),
+        summary: rain > 60 ? 'Rain' : rain > 35 ? 'Cloudy' : 'Clear',
+        riskLevel,
+        rainProbabilityPct: rain,
+        windKph: wind,
+        temperatureMinC: tempMin,
+        temperatureMaxC: tempMax,
+      };
+    });
+
+    return {
+      source: 'SYNTHETIC',
+      location: null,
+      riskLevel: weatherCondition,
+      next24hRainProbabilityPct: todayRain,
+      next24hTemperatureRangeC: {
+        min: todayMinTemp,
+        max: todayMaxTemp,
+      },
+      windKph: todayWind,
+      advisory: this.buildAdvisory(weatherCondition),
+      daily,
+    };
+  }
+
+  private async resolveFarmLocation(farmId: string): Promise<ResolvedFarmLocation | null> {
+    const cached = this.locationCache.get(farmId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
+    const [farm, latestProfileEvent, latestReading] = await Promise.all([
+      prisma.farm.findUnique({ where: { id: farmId }, select: { name: true } }),
+      prisma.event.findFirst({
+        where: { farmId, type: 'FARM_PROFILE_UPDATED' },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.sensorReading.findFirst({
+        where: { device: { farmId } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const readingPayload = (latestReading?.data ?? null) as Record<string, unknown> | null;
+    const fromSensorLat = this.pickNumeric(readingPayload, ['latitude', 'lat', 'gpsLat']);
+    const fromSensorLon = this.pickNumeric(readingPayload, ['longitude', 'lng', 'lon', 'gpsLon']);
+
+    if (fromSensorLat !== null && fromSensorLon !== null) {
+      const sensorLocation = {
+        label: 'Sensor GPS',
+        latitude: this.clamp(fromSensorLat, -90, 90),
+        longitude: this.clamp(fromSensorLon, -180, 180),
+        timezone: 'auto',
+      };
+      this.locationCache.set(farmId, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, value: sensorLocation });
+      return sensorLocation;
+    }
+
+    const profilePayload = (latestProfileEvent?.payload ?? null) as Record<string, unknown> | null;
+    const locationQuery = [
+      typeof profilePayload?.location === 'string' ? profilePayload.location.trim() : '',
+      farm?.name?.trim() ?? '',
+    ].find((value) => value.length > 0);
+
+    if (!locationQuery) {
+      this.locationCache.set(farmId, { expiresAt: Date.now() + 60 * 60 * 1000, value: null });
+      return null;
+    }
+
+    try {
+      const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationQuery)}&count=1&language=en&format=json`;
+      const geocodeResponse = await fetch(geocodeUrl, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!geocodeResponse.ok) {
+        this.locationCache.set(farmId, { expiresAt: Date.now() + 60 * 60 * 1000, value: null });
+        return null;
+      }
+
+      const geocodeData = await geocodeResponse.json() as {
+        results?: Array<{
+          name?: string;
+          country?: string;
+          latitude?: number;
+          longitude?: number;
+          timezone?: string;
+        }>;
+      };
+
+      const first = geocodeData.results?.[0];
+      if (!first || typeof first.latitude !== 'number' || typeof first.longitude !== 'number') {
+        this.locationCache.set(farmId, { expiresAt: Date.now() + 60 * 60 * 1000, value: null });
+        return null;
+      }
+
+      const resolved = {
+        label: [first.name, first.country].filter(Boolean).join(', ') || locationQuery,
+        latitude: first.latitude,
+        longitude: first.longitude,
+        timezone: first.timezone || 'auto',
+      };
+
+      this.locationCache.set(farmId, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, value: resolved });
+      return resolved;
+    } catch {
+      this.locationCache.set(farmId, { expiresAt: Date.now() + 60 * 60 * 1000, value: null });
+      return null;
+    }
+  }
+
+  private async resolveWeatherForecast(farmId: string, unresolvedAlerts: Array<{ level: string }>): Promise<WeatherForecastPayload> {
+    const cached = this.forecastCache.get(farmId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
+    const location = await this.resolveFarmLocation(farmId);
+    if (!location) {
+      const fallback = this.fallbackSyntheticWeather(unresolvedAlerts);
+      this.forecastCache.set(farmId, { expiresAt: Date.now() + 30 * 60 * 1000, value: fallback });
+      return fallback;
+    }
+
+    try {
+      const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&forecast_days=7&timezone=${encodeURIComponent(location.timezone)}`;
+      const forecastResponse = await fetch(forecastUrl, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!forecastResponse.ok) {
+        throw new Error('Weather provider unavailable');
+      }
+
+      const payload = await forecastResponse.json() as {
+        daily?: {
+          time?: string[];
+          weather_code?: number[];
+          temperature_2m_max?: number[];
+          temperature_2m_min?: number[];
+          precipitation_probability_max?: number[];
+          wind_speed_10m_max?: number[];
+        };
+      };
+
+      const dailyTime = payload.daily?.time ?? [];
+      const dailyCodes = payload.daily?.weather_code ?? [];
+      const dailyMaxTemp = payload.daily?.temperature_2m_max ?? [];
+      const dailyMinTemp = payload.daily?.temperature_2m_min ?? [];
+      const dailyRainProbability = payload.daily?.precipitation_probability_max ?? [];
+      const dailyWind = payload.daily?.wind_speed_10m_max ?? [];
+
+      if (!dailyTime.length) {
+        throw new Error('Weather provider returned empty forecast');
+      }
+
+      const daily: DailyWeatherForecast[] = dailyTime.map((date, index) => {
+        const code = Math.round(Number(dailyCodes[index] ?? 1));
+        const rainProbabilityPct = this.clamp(Math.round(Number(dailyRainProbability[index] ?? 0)), 0, 100);
+        const windKph = this.clamp(Math.round(Number(dailyWind[index] ?? 0)), 0, 120);
+        const temperatureMaxC = Number(this.clamp(Number(dailyMaxTemp[index] ?? 28), -30, 55).toFixed(1));
+        const temperatureMinC = Number(this.clamp(Number(dailyMinTemp[index] ?? 18), -40, 45).toFixed(1));
+        const riskLevel = this.riskFromWeather(rainProbabilityPct, windKph, code);
+
+        return {
+          date,
+          summary: this.weatherCodeSummary(code),
+          riskLevel,
+          rainProbabilityPct,
+          windKph,
+          temperatureMinC,
+          temperatureMaxC,
+        };
+      });
+
+      const today = daily[0];
+      const resolved: WeatherForecastPayload = {
+        source: 'OPEN_METEO',
+        location,
+        riskLevel: today?.riskLevel ?? 'STABLE',
+        next24hRainProbabilityPct: today?.rainProbabilityPct ?? 0,
+        next24hTemperatureRangeC: {
+          min: today?.temperatureMinC ?? 0,
+          max: today?.temperatureMaxC ?? 0,
+        },
+        windKph: today?.windKph ?? 0,
+        advisory: this.buildAdvisory(today?.riskLevel ?? 'STABLE'),
+        daily,
+      };
+
+      this.forecastCache.set(farmId, { expiresAt: Date.now() + 60 * 60 * 1000, value: resolved });
+      return resolved;
+    } catch {
+      const fallback = this.fallbackSyntheticWeather(unresolvedAlerts);
+      this.forecastCache.set(farmId, { expiresAt: Date.now() + 30 * 60 * 1000, value: fallback });
+      return fallback;
+    }
+  }
+
   private normalizeNumeric(value: unknown) {
     if (typeof value === 'number' && Number.isFinite(value)) return value;
     if (typeof value === 'string') {
@@ -176,32 +484,7 @@ export class MonitoringService {
         topDevice: entry.topDevice,
       }));
 
-    const weatherRiskScore = this.clamp(
-      unresolvedAlerts.filter((alert) => alert.level === 'CRITICAL').length * 15
-      + unresolvedAlerts.filter((alert) => alert.level === 'WARNING').length * 6,
-      8,
-      95,
-    );
-    const weatherCondition = weatherRiskScore > 70
-      ? 'HIGH_RISK'
-      : weatherRiskScore > 45
-        ? 'MODERATE_RISK'
-        : 'STABLE';
-
-    const weatherForecast = {
-      riskLevel: weatherCondition,
-      next24hRainProbabilityPct: this.clamp(Math.round(weatherRiskScore * 0.9), 5, 98),
-      next24hTemperatureRangeC: {
-        min: this.clamp(14 + Math.round(weatherRiskScore * 0.06), 10, 26),
-        max: this.clamp(26 + Math.round(weatherRiskScore * 0.07), 23, 42),
-      },
-      windKph: this.clamp(8 + Math.round(weatherRiskScore * 0.22), 6, 34),
-      advisory: weatherRiskScore > 70
-        ? 'Pause non-critical spraying and protect high-stress zones.'
-        : weatherRiskScore > 45
-          ? 'Maintain irrigation watch and verify disease-prone blocks.'
-          : 'Proceed with normal operations and monitor threshold alerts.',
-    };
+    const weatherForecast = await this.resolveWeatherForecast(farmId, unresolvedAlerts);
 
     const ndviCandidates = latestReadings
       .map((reading) => this.pickNumeric(reading.data, ['ndvi', 'NDVI', 'vegetationIndex', 'vigour']))

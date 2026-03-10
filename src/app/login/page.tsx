@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const resetSuccess = params.get('reset') === '1';
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -122,8 +123,12 @@ export default function LoginPage() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-xs font-semibold text-primary">Forgot password?</Link>
+            </div>
           </div>
 
+          {resetSuccess ? <p className="text-xs text-emerald-700">Password reset successful. Sign in with your new password.</p> : null}
           {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
           <button

@@ -18,7 +18,12 @@ export async function proxy(request: NextRequest) {
   // In production, use session token validation against DB/Redis
   const sessionToken = request.cookies.get('session_token')?.value;
   const isAuthRoute = request.nextUrl.pathname.startsWith('/api/auth');
-  const isAuthMutation = request.nextUrl.pathname === '/api/auth/login' || request.nextUrl.pathname === '/api/auth/signup';
+  const isAuthMutation = [
+    '/api/auth/login',
+    '/api/auth/signup',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+  ].includes(request.nextUrl.pathname);
   const isPublicRoute = request.nextUrl.pathname === '/';
   const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
   const farmMatch = request.nextUrl.pathname.match(/^\/api\/farms\/([^/]+)/);

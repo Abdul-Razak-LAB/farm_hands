@@ -1,8 +1,9 @@
-import { randomBytes, scryptSync } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { AppError, createErrorResponse } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { generateSessionToken, hashSessionToken } from '@/lib/session-token';
+import { hashPassword } from '@/lib/password';
 
 export const runtime = 'nodejs';
 
@@ -10,12 +11,6 @@ const acceptInviteSchema = z.object({
   fullName: z.string().min(2),
   password: z.string().min(8),
 });
-
-function hashPassword(password: string) {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
-}
 
 const invitationRepo = (prisma as any).invitation as {
   findUnique: (args: any) => Promise<any>;

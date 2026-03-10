@@ -1,8 +1,9 @@
-﻿import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+﻿import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { AppError, createErrorResponse } from '@/lib/errors';
 import { hashSessionToken } from '@/lib/session-token';
+import { verifyPassword } from '@/lib/password';
 
 export const runtime = 'nodejs';
 
@@ -11,20 +12,6 @@ const loginSchema = z.object({
   password: z.string().min(8),
   role: z.enum(['OWNER', 'MANAGER', 'WORKER']),
 });
-
-function verifyPassword(password: string, storedHash: string) {
-  const [salt, hash] = storedHash.split(':');
-  if (!salt || !hash) return false;
-
-  const passwordHash = scryptSync(password, salt, 64);
-  const storedHashBuffer = Buffer.from(hash, 'hex');
-
-  if (passwordHash.length !== storedHashBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(passwordHash, storedHashBuffer);
-}
 
 export async function POST(request: Request) {
   try {

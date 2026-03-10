@@ -1,8 +1,9 @@
-﻿import { randomBytes, scryptSync } from 'node:crypto';
+﻿import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { AppError, createErrorResponse } from '@/lib/errors';
 import { hashSessionToken } from '@/lib/session-token';
+import { hashPassword } from '@/lib/password';
 
 export const runtime = 'nodejs';
 
@@ -13,12 +14,6 @@ const signupSchema = z.object({
   password: z.string().min(8),
   role: z.enum(['OWNER', 'MANAGER', 'WORKER']).optional().default('OWNER'),
 });
-
-function hashPassword(password: string) {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
-}
 
 export async function POST(request: Request) {
   try {

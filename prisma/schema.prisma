@@ -19,6 +19,7 @@ model User {
   memberships   FarmMembership[]
   invitesSent   Invitation[]     @relation("InvitationInviter")
   sessions      Session[]
+  passwordResets PasswordResetToken[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -63,6 +64,18 @@ model Session {
   token        String   @unique
   expiresAt    DateTime
   user         User     @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt, usedAt])
 }
 
 model Invitation {

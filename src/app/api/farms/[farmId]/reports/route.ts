@@ -9,16 +9,64 @@ export async function GET(
 ) {
   try {
     const format = request.nextUrl.searchParams.get('format') || 'json';
+    const reportType = request.nextUrl.searchParams.get('reportType') || 'summary';
     const periodDays = Number(request.nextUrl.searchParams.get('periodDays') || 30);
     const { farmId } = await context.params;
 
     if (format === 'json') {
       requirePermission(request, 'report:read');
-      const data = await reportingService.buildSummary(farmId, periodDays);
+      const data = reportType === 'transactions'
+        ? await reportingService.buildTransactionReport(farmId, periodDays)
+        : reportType === 'operations'
+          ? await reportingService.buildOperationsDetailReport(farmId, periodDays)
+          : await reportingService.buildSummary(farmId, periodDays);
       return Response.json({ success: true, data });
     }
 
     requirePermission(request, 'report:export');
+
+    if (reportType === 'transactions') {
+      const report = await reportingService.buildTransactionReport(farmId, periodDays);
+
+      if (format === 'csv') {
+        const csv = reportingService.toTransactionCsv(report);
+        return new Response(csv, {
+          headers: {
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': `attachment; filename="farm-transaction-report-${farmId}.csv"`,
+          },
+        });
+      }
+
+      if (format === 'excel') {
+        const tsv = reportingService.toTransactionExcelTsv(report);
+        return new Response(tsv, {
+          headers: {
+            'Content-Type': 'application/vnd.ms-excel; charset=utf-8',
+            'Content-Disposition': `attachment; filename="farm-transaction-report-${farmId}.xls"`,
+          },
+        });
+      }
+
+      if (format === 'pdf') {
+        const pdf = reportingService.toTransactionPdf(report);
+        return new Response(pdf, {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="farm-transaction-report-${farmId}.pdf"`,
+          },
+        });
+      }
+
+      return Response.json({
+        success: false,
+        error: {
+          code: 'INVALID_FORMAT',
+          message: 'Supported formats are json, csv, excel, pdf.',
+        },
+      }, { status: 400 });
+    }
+
     const summary = await reportingService.buildSummary(farmId, periodDays);
 
     if (format === 'csv') {

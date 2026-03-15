@@ -39,6 +39,109 @@ export type ReportSummary = {
   };
 };
 
+export type TransactionRecord = {
+  requestId: string;
+  requestedAt: string;
+  amount: number;
+  category: string;
+  description: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  decidedAt?: string | null;
+  decidedBy?: string | null;
+  decision?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  comment?: string | null;
+};
+
+export type TransactionReport = {
+  generatedAt: string;
+  periodDays: number;
+  totals: {
+    totalTransactions: number;
+    pendingTransactions: number;
+    approvedTransactions: number;
+    rejectedTransactions: number;
+    totalAmount: number;
+    approvedAmount: number;
+    rejectedAmount: number;
+  };
+  records: TransactionRecord[];
+};
+
+export type DomainRecentRecord = {
+  id: string;
+  when: string;
+  action: string;
+  note: string;
+};
+
+export type OperationsDetailReport = {
+  generatedAt: string;
+  periodDays: number;
+  market: {
+    activeListings: number;
+    totalListings: number;
+    openInterests: number;
+    recent: DomainRecentRecord[];
+  };
+  updates: {
+    totalUpdates: number;
+    recent: DomainRecentRecord[];
+  };
+  digest: {
+    snapshots: number;
+    recent: DomainRecentRecord[];
+  };
+  procurement: {
+    purchaseOrders: number;
+    issuedOrDelivered: number;
+    recent: DomainRecentRecord[];
+  };
+  payroll: {
+    runs: number;
+    paidRuns: number;
+    totalNetPay: number;
+    recent: DomainRecentRecord[];
+  };
+  monitoring: {
+    alerts: number;
+    unresolvedAlerts: number;
+    devices: number;
+    recent: DomainRecentRecord[];
+  };
+  incident: {
+    reported: number;
+    resolved: number;
+    openSignals: number;
+    recent: DomainRecentRecord[];
+  };
+  message: {
+    totalMessages: number;
+    withAttachments: number;
+    recent: DomainRecentRecord[];
+  };
+  consultation: {
+    requested: number;
+    inProgress: number;
+    resolved: number;
+    recent: DomainRecentRecord[];
+  };
+  vendor: {
+    vendors: number;
+    confirmedOrders: number;
+    recent: DomainRecentRecord[];
+  };
+  farmhands: {
+    workers: number;
+    events: number;
+    recent: DomainRecentRecord[];
+  };
+  audit: {
+    audits: number;
+    auditResults: number;
+    recent: DomainRecentRecord[];
+  };
+};
+
 export type WeeklyDigest = {
   totals?: {
     events?: number;

@@ -7,6 +7,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
+function weatherSymbol(summary?: string, riskLevel?: string) {
+  const normalized = String(summary || '').toLowerCase();
+
+  if (normalized.includes('thunder')) return '⛈';
+  if (normalized.includes('snow')) return '❄';
+  if (normalized.includes('shower') || normalized.includes('rain') || normalized.includes('drizzle')) return '🌧';
+  if (normalized.includes('fog')) return '🌫';
+  if (normalized.includes('cloud')) return '☁';
+  if (normalized.includes('clear')) return '☀';
+
+  if (riskLevel === 'HIGH_RISK') return '⛈';
+  if (riskLevel === 'MODERATE_RISK') return '🌦';
+  return '☀';
+}
+
 export function MonitoringModule() {
   const { farmId } = useAuth();
   const pathname = usePathname();
@@ -470,9 +485,14 @@ export function MonitoringModule() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-md bg-accent/20 space-y-1">
             <p className="text-[10px] uppercase text-muted-foreground">Weather Forecast</p>
-            <p className="text-sm font-semibold">{fieldStateAnalytics?.weatherForecast?.riskLevel ?? 'NO DATA'}</p>
+            <p className="text-sm font-semibold">
+              {weatherSymbol(undefined, fieldStateAnalytics?.weatherForecast?.riskLevel)} {fieldStateAnalytics?.weatherForecast?.riskLevel ?? 'NO DATA'}
+            </p>
             <p className="text-[11px] text-muted-foreground">
               Rain {fieldStateAnalytics?.weatherForecast?.next24hRainProbabilityPct ?? 0}% · Wind {fieldStateAnalytics?.weatherForecast?.windKph ?? 0} kph
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Next 24h rain amount {fieldStateAnalytics?.weatherForecast?.next24hRainMm ?? 0} mm
             </p>
             {fieldStateAnalytics?.weatherForecast?.next24hTemperatureRangeC ? (
               <p className="text-[11px] text-muted-foreground">
@@ -483,7 +503,7 @@ export function MonitoringModule() {
               <div className="pt-1 space-y-0.5">
                 {fieldStateAnalytics.weatherForecast.daily.slice(0, 5).map((day: any) => (
                   <p key={day.date} className="text-[10px] text-muted-foreground">
-                    {new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date))}: {day.summary} {day.temperatureMinC}-{day.temperatureMaxC} C · Rain {day.rainProbabilityPct}%
+                    {new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date))}: {weatherSymbol(day.summary, day.riskLevel)} {day.summary} {day.temperatureMinC}-{day.temperatureMaxC} C · Rain {day.rainProbabilityPct}%
                   </p>
                 ))}
               </div>

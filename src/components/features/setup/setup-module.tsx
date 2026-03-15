@@ -294,7 +294,7 @@ export function SetupModule() {
           <>
             <div className="grid gap-2 md:grid-cols-2">
               <input value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Farm name" className="h-10 rounded-md px-3 text-sm" />
-              <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="h-10 rounded-md px-3 text-sm" />
+              <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location (e.g. Kumasi, GH or 6.6885,-1.6244)" className="h-10 rounded-md px-3 text-sm" />
               <input value={sizeHectares} onChange={(event) => setSizeHectares(event.target.value)} placeholder="Size (hectares)" className="h-10 rounded-md px-3 text-sm" />
               <input value={crops} onChange={(event) => setCrops(event.target.value)} placeholder="Crops (comma-separated)" className="h-10 rounded-md px-3 text-sm" />
             </div>

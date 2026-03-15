@@ -50,8 +50,23 @@ type MonitoringWeatherPayload = {
   };
 };
 
+function weatherSymbol(summary?: string, riskLevel?: string) {
+  const normalized = String(summary || '').toLowerCase();
+
+  if (normalized.includes('thunder')) return '⛈';
+  if (normalized.includes('snow')) return '❄';
+  if (normalized.includes('shower') || normalized.includes('rain') || normalized.includes('drizzle')) return '🌧';
+  if (normalized.includes('fog')) return '🌫';
+  if (normalized.includes('cloud')) return '☁';
+  if (normalized.includes('clear')) return '☀';
+
+  if (riskLevel === 'HIGH_RISK') return '⛈';
+  if (riskLevel === 'MODERATE_RISK') return '🌦';
+  return '☀';
+}
+
 export default function HomePage() {
-  const { role, farmId } = useAuth();
+  const { role, farmId, setFarmId, setRole } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFarmName, setActiveFarmName] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -62,6 +77,7 @@ export default function HomePage() {
   const [isInviting, setIsInviting] = useState(false);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
+  const [farmSwitchNotice, setFarmSwitchNotice] = useState('');
 
   const modules: Array<{ name: string; href: string; roles: Role[]; description: string }> = [
     { name: 'Setup', href: '/setup', roles: ['OWNER', 'MANAGER', 'WORKER'], description: 'Farm profile, sensors, and team role configuration.' },
@@ -152,12 +168,28 @@ export default function HomePage() {
     const loadFarmName = async () => {
       try {
         const response = await fetch('/api/farms', { cache: 'no-store' });
-        const result = (await response.json()) as { success: boolean; data?: FarmSummary[] };
-        if (!result.success || !result.data) return;
+        if (!response.ok) {
+          throw new Error('Unable to load farms');
+        }
 
-        const selected = result.data.find((farm) => farm.farmId === farmId);
+        const result = (await response.json()) as { success: boolean; data?: FarmSummary[] };
+        if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
+          if (!cancelled) {
+            setActiveFarmName(null);
+          }
+          return;
+        }
+
+        const selected = result.data.find((farm) => farm.farmId === farmId) ?? result.data[0];
         if (!cancelled) {
           setActiveFarmName(selected?.name || null);
+
+          // Self-heal stale client state so future requests use a valid membership farm.
+          if (selected && selected.farmId !== farmId) {
+            setFarmId(selected.farmId);
+            setRole(selected.role);
+            setFarmSwitchNotice(`Switched to ${selected.name} because your previous farm selection was no longer available.`);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -171,7 +203,19 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [farmId]);
+  }, [farmId, setFarmId, setRole]);
+
+  useEffect(() => {
+    if (!farmSwitchNotice) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setFarmSwitchNotice('');
+    }, 7000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [farmSwitchNotice]);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -396,10 +440,13 @@ export default function HomePage() {
               ) : weatherForecast ? (
                 <>
                   <p className="text-sm font-semibold">
-                    {String(weatherForecast.riskLevel || 'UNKNOWN')} · Rain {Number(weatherForecast.next24hRainProbabilityPct || 0)}%
+                    {weatherSymbol(undefined, String(weatherForecast.riskLevel || ''))} {String(weatherForecast.riskLevel || 'UNKNOWN')} · Rain {Number(weatherForecast.next24hRainProbabilityPct || 0)}%
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     Temp {Number(weatherForecast.next24hTemperatureRangeC?.min ?? 0)}-{Number(weatherForecast.next24hTemperatureRangeC?.max ?? 0)} C
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Next 24h rain amount {Number(weatherForecast.next24hRainMm ?? 0)} mm
                   </p>
                 </>
               ) : (
@@ -408,11 +455,14 @@ export default function HomePage() {
               {weatherForecast?.windKph !== undefined ? (
                 <p className="text-[11px] text-muted-foreground">Wind {Number(weatherForecast.windKph)} kph</p>
               ) : null}
+              {weatherForecast?.source ? (
+                <p className="text-[11px] text-muted-foreground">Source {String(weatherForecast.source)}</p>
+              ) : null}
               {upcomingForecast.length ? (
                 <div className="mt-1 space-y-0.5">
                   {upcomingForecast.map((day) => (
                     <p key={day.date} className="text-[10px] text-muted-foreground">
-                      {new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date))}: {day.summary} {day.temperatureMinC}-{day.temperatureMaxC} C
+                      {new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date))}: {weatherSymbol(day.summary, day.riskLevel)} {day.summary} {day.temperatureMinC}-{day.temperatureMaxC} C
                     </p>
                   ))}
                 </div>
@@ -422,6 +472,12 @@ export default function HomePage() {
               ) : null}
             </div>
           </div>
+
+          {farmSwitchNotice ? (
+            <div className="mx-auto mt-3 w-full max-w-4xl rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-left text-xs text-amber-900">
+              {farmSwitchNotice}
+            </div>
+          ) : null}
         </div>
       </section>
 

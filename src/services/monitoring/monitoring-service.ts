@@ -21,6 +21,7 @@ type WeatherForecastPayload = {
   } | null;
   riskLevel: 'STABLE' | 'MODERATE_RISK' | 'HIGH_RISK';
   next24hRainProbabilityPct: number;
+  next24hRainMm: number;
   next24hTemperatureRangeC: {
     min: number;
     max: number;
@@ -114,6 +115,38 @@ export class MonitoringService {
     return 'Proceed with normal operations while maintaining routine weather checks for schedule optimization.';
   }
 
+  private selectDominantWeatherCode(codes: number[]) {
+    if (!codes.length) return 0;
+    if (codes.some((code) => [95, 96, 99].includes(code))) return 95;
+    if (codes.some((code) => [80, 81, 82].includes(code))) return 80;
+    if (codes.some((code) => [61, 63, 65, 66, 67].includes(code))) return 61;
+    if (codes.some((code) => [51, 53, 55, 56, 57].includes(code))) return 51;
+    if (codes.some((code) => [45, 48].includes(code))) return 45;
+    return codes[0] ?? 0;
+  }
+
+  private parseCoordinatesFromText(locationText: string) {
+    const text = locationText.trim();
+    if (!text) return null;
+
+    // Accept common coordinate formats like "5.6037,-0.1870" or "5.6037, -0.1870".
+    const coordinatePattern = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
+    const match = coordinatePattern.exec(text);
+    if (!match) return null;
+
+    const latitude = this.normalizeNumeric(match[1]);
+    const longitude = this.normalizeNumeric(match[2]);
+
+    if (latitude === null || longitude === null) return null;
+
+    return {
+      label: `Profile Coordinates (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+      latitude: this.clamp(latitude, -90, 90),
+      longitude: this.clamp(longitude, -180, 180),
+      timezone: 'auto',
+    };
+  }
+
   private fallbackSyntheticWeather(unresolvedAlerts: Array<{ level: string }>): WeatherForecastPayload {
     const weatherRiskScore = this.clamp(
       unresolvedAlerts.filter((alert) => alert.level === 'CRITICAL').length * 15
@@ -158,6 +191,7 @@ export class MonitoringService {
       location: null,
       riskLevel: weatherCondition,
       next24hRainProbabilityPct: todayRain,
+      next24hRainMm: Number((todayRain * 0.07).toFixed(1)),
       next24hTemperatureRangeC: {
         min: todayMinTemp,
         max: todayMaxTemp,
@@ -202,8 +236,18 @@ export class MonitoringService {
     }
 
     const profilePayload = (latestProfileEvent?.payload ?? null) as Record<string, unknown> | null;
+    const profileLocation = typeof profilePayload?.location === 'string' ? profilePayload.location.trim() : '';
+
+    if (profileLocation) {
+      const profileCoordinates = this.parseCoordinatesFromText(profileLocation);
+      if (profileCoordinates) {
+        this.locationCache.set(farmId, { expiresAt: Date.now() + 24 * 60 * 60 * 1000, value: profileCoordinates });
+        return profileCoordinates;
+      }
+    }
+
     const locationQuery = [
-      typeof profilePayload?.location === 'string' ? profilePayload.location.trim() : '',
+      profileLocation,
       farm?.name?.trim() ?? '',
     ].find((value) => value.length > 0);
 
@@ -270,7 +314,7 @@ export class MonitoringService {
     }
 
     try {
-      const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&forecast_days=7&timezone=${encodeURIComponent(location.timezone)}`;
+      const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&hourly=precipitation_probability,precipitation,weather_code,wind_speed_10m,temperature_2m&forecast_days=7&forecast_hours=24&timezone=${encodeURIComponent(location.timezone)}`;
       const forecastResponse = await fetch(forecastUrl, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
@@ -290,6 +334,14 @@ export class MonitoringService {
           precipitation_probability_max?: number[];
           wind_speed_10m_max?: number[];
         };
+        hourly?: {
+          time?: string[];
+          precipitation_probability?: number[];
+          precipitation?: number[];
+          weather_code?: number[];
+          wind_speed_10m?: number[];
+          temperature_2m?: number[];
+        };
       };
 
       const dailyTime = payload.daily?.time ?? [];
@@ -298,6 +350,11 @@ export class MonitoringService {
       const dailyMinTemp = payload.daily?.temperature_2m_min ?? [];
       const dailyRainProbability = payload.daily?.precipitation_probability_max ?? [];
       const dailyWind = payload.daily?.wind_speed_10m_max ?? [];
+      const hourlyRainProbability = payload.hourly?.precipitation_probability ?? [];
+      const hourlyRainAmount = payload.hourly?.precipitation ?? [];
+      const hourlyWeatherCode = payload.hourly?.weather_code ?? [];
+      const hourlyWind = payload.hourly?.wind_speed_10m ?? [];
+      const hourlyTemperature = payload.hourly?.temperature_2m ?? [];
 
       if (!dailyTime.length) {
         throw new Error('Weather provider returned empty forecast');
@@ -322,18 +379,52 @@ export class MonitoringService {
         };
       });
 
-      const today = daily[0];
+      const next24hRainProbabilityPct = this.clamp(
+        Math.round(Math.max(...hourlyRainProbability.map((value) => Number(value) || 0), daily[0]?.rainProbabilityPct ?? 0)),
+        0,
+        100,
+      );
+      const next24hRainMm = Number(
+        this.clamp(
+          hourlyRainAmount.reduce((sum, value) => sum + (Number.isFinite(Number(value)) ? Number(value) : 0), 0),
+          0,
+          500,
+        ).toFixed(1),
+      );
+      const next24hWindKph = this.clamp(
+        Math.round(Math.max(...hourlyWind.map((value) => Number(value) || 0), daily[0]?.windKph ?? 0)),
+        0,
+        120,
+      );
+      const next24hMinTempC = Number(
+        this.clamp(
+          Math.min(...hourlyTemperature.map((value) => Number(value) || Infinity), daily[0]?.temperatureMinC ?? 0),
+          -40,
+          45,
+        ).toFixed(1),
+      );
+      const next24hMaxTempC = Number(
+        this.clamp(
+          Math.max(...hourlyTemperature.map((value) => Number(value) || -Infinity), daily[0]?.temperatureMaxC ?? 0),
+          -30,
+          55,
+        ).toFixed(1),
+      );
+      const dominantCode = this.selectDominantWeatherCode(hourlyWeatherCode.map((value) => Math.round(Number(value) || 0)));
+      const next24hRiskLevel = this.riskFromWeather(next24hRainProbabilityPct, next24hWindKph, dominantCode);
+
       const resolved: WeatherForecastPayload = {
         source: 'OPEN_METEO',
         location,
-        riskLevel: today?.riskLevel ?? 'STABLE',
-        next24hRainProbabilityPct: today?.rainProbabilityPct ?? 0,
+        riskLevel: next24hRiskLevel,
+        next24hRainProbabilityPct,
+        next24hRainMm,
         next24hTemperatureRangeC: {
-          min: today?.temperatureMinC ?? 0,
-          max: today?.temperatureMaxC ?? 0,
+          min: next24hMinTempC,
+          max: next24hMaxTempC,
         },
-        windKph: today?.windKph ?? 0,
-        advisory: this.buildAdvisory(today?.riskLevel ?? 'STABLE'),
+        windKph: next24hWindKph,
+        advisory: this.buildAdvisory(next24hRiskLevel),
         daily,
       };
 

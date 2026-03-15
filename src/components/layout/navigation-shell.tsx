@@ -37,7 +37,8 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
   const pendingCount = useOutboxStore((state) => state.pendingCount);
   const setPendingCount = useOutboxStore((state) => state.setPendingCount);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const isStandaloneRoute = pathname === '/register' || pathname === '/login';
+  const standaloneAuthRoutes = ['/register', '/login', '/forgot-password', '/reset-password'];
+  const isStandaloneRoute = standaloneAuthRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   useEffect(() => {
     if (isLoading) return;

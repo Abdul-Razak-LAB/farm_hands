@@ -214,10 +214,10 @@ export function ConsultationModule() {
           onChange={(event) => setUrgency(event.target.value as ConsultationUrgency)}
           className="w-full h-10 rounded-md px-3 text-sm"
         >
-          <option value="LOW">LOW</option>
+          <option value="LOW">LOW.</option>
           <option value="MEDIUM">MEDIUM</option>
-          <option value="HIGH">HIGH</option>
-          <option value="URGENT">URGENT</option>
+          <option value="HIGH">HIGH.</option>
+          <option value="URGENT">URGENT.</option>
         </select>
         <textarea
           value={question}
